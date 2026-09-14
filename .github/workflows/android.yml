@@ -32,6 +32,14 @@ jobs:
       - name: Restaurar keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
 
+      - name: Baixar Gradle (retry contra 504)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 6
+          retry_wait_seconds: 20
+          command: cd "$GITHUB_WORKSPACE/android" && ./gradlew --version
+
       - name: Build APK assinado
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -41,6 +49,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --no-daemon
+      
 
       - name: Ler versao do build.gradle.kts
         id: ver

@@ -24,6 +24,8 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - uses: gradle/actions/setup-gradle@v4     # <-- adiciona esta linha
+
       - name: Instalar componentes do SDK
         run: yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" >/dev/null
 

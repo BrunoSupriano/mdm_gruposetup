@@ -48,7 +48,13 @@ async def apply_migrations(con) -> list:
 
 
 async def run():
-    url = os.environ["DATABASE_URL"]
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if not url:
+        raise SystemExit(
+            "ERRO: DATABASE_URL nao definido. Configure o secret DATABASE_URL no "
+            "GitHub (Settings > Secrets and variables > Actions) com a connection "
+            "string do Neon."
+        )
     dsn, ssl = dsn_and_ssl(url)
     con = await asyncpg.connect(dsn=dsn, ssl=ssl)
     try:

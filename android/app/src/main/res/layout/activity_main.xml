@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/app_name" android:textColor="@color/neutral"
+            android:textSize="22sp" android:textStyle="bold" android:paddingBottom="4dp"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Monitoramento de localizacao do dispositivo corporativo"
+            android:textColor="@color/neutral" android:textSize="13sp" android:paddingBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/statusGeral"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Verificando..." android:textColor="@color/white"
+            android:textSize="18sp" android:textStyle="bold" android:gravity="center"
+            android:padding="18dp" android:background="@color/neutral" android:layout_marginBottom="20dp"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Status" android:textColor="@color/neutral"
+            android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+
+        <TextView android:id="@+id/linhaLoc" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+        <TextView android:id="@+id/linhaBg" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+        <TextView android:id="@+id/linhaGps" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+        <TextView android:id="@+id/linhaNotif" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+        <TextView android:id="@+id/linhaBateria" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+        <TextView android:id="@+id/linhaGms" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#DDDDDD" android:layout_marginVertical="16dp"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Identificacao do aparelho" android:textColor="@color/neutral"
+            android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="ANDROID_ID (use na planilha de cadastro):"
+            android:textColor="@color/neutral" android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/txtAndroidId"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="-" android:textColor="@color/primary" android:textSize="16sp"
+            android:textStyle="bold" android:textIsSelectable="true" android:paddingVertical="4dp"/>
+
+        <Button
+            android:id="@+id/btnCopiarId"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Copiar ID" android:textColor="@color/white"
+            android:backgroundTint="@color/primaryLight" android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/txtVersao"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Versao -" android:textColor="@color/neutral"
+            android:textSize="12sp" android:paddingTop="12dp"/>
+
+        <Button
+            android:id="@+id/btnAtualizar"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Atualizar aplicativo" android:textColor="@color/white"
+            android:backgroundTint="@color/accent" android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#DDDDDD" android:layout_marginVertical="16dp"/>
+
+        <Button
+            android:id="@+id/btnCorrigir"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Concluir configuracao" android:textColor="@color/white"
+            android:backgroundTint="@color/primary"/>
+
+        <Button
+            android:id="@+id/btnEnviarAgora"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:text="Enviar localizacao agora"
+            android:textColor="@color/white" android:backgroundTint="@color/neutral"/>
+
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Este dispositivo e da empresa e seu monitoramento segue a politica de uso interna."
+            android:textColor="@color/neutral" android:textSize="11sp"/>
+
+    </LinearLayout>
+</ScrollView>

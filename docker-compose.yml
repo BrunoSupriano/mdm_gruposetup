@@ -1,0 +1,54 @@
+# Ambiente de desenvolvimento/teste completo: banco + API + painel.
+# Suba com:  docker compose up --build
+#   Painel:  http://localhost:5173
+#   API:     http://localhost:8000  (health em /health)
+#   Banco:   localhost:5432  (user/senha/db = mdm)
+# Obs: o app Android NAO e um servico aqui - o Dockerfile em android/ e so para
+#      compilar o APK sob demanda (docker build -t mdm-apk android/).
+name: mdm-setup
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: mdm
+      POSTGRES_PASSWORD: mdm
+      POSTGRES_DB: mdm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mdm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://mdm:mdm@db:5432/mdm
+      API_KEY: ${API_KEY:-chave-dev}
+      ADMIN_KEY: ${ADMIN_KEY:-admin-dev}
+      PAINEL_SENHA: ${PAINEL_SENHA:-painel-dev}
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

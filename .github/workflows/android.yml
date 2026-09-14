@@ -1,0 +1,65 @@
+name: App (build + release + publicar)
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar componentes do SDK
+        run: yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" >/dev/null
+
+      - name: Restaurar keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build APK assinado
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Ler versao do build.gradle.kts
+        id: ver
+        run: |
+          VC=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -1)
+          VN=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+          echo "code=$VC" >> "$GITHUB_OUTPUT"
+          echo "name=$VN" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/app-release.apk
+          name: "v${{ steps.ver.outputs.name }} (build ${{ steps.ver.outputs.code }})"
+
+      - name: Registrar versao no backend (auto-update)
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+        run: |
+          curl -fsSL -X POST \
+            "$API_BASE_URL/api/v1/app/release?version_code=${{ steps.ver.outputs.code }}&version_name=${{ steps.ver.outputs.name }}&obrigatoria=false" \
+            -H "X-Admin-Key: $ADMIN_KEY" \
+            --data-binary @app/build/outputs/apk/release/app-release.apk

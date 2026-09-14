@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: mdm
+      POSTGRES_PASSWORD: mdm
+      POSTGRES_DB: mdm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://mdm:mdm@db:5432/mdm
+      API_KEY: chave-de-teste-123
+      ADMIN_KEY: admin-de-teste-123
+      PAINEL_SENHA: painel-123
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

@@ -1,0 +1,12 @@
+# segredos e artefatos - NUNCA versionar
+*.jks
+*.keystore
+**/keystore.properties
+**/local.properties
+**/.env
+# build
+**/build/
+**/.gradle/
+backend/**/__pycache__/
+*.pyc
+.idea/

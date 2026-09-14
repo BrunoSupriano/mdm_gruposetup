@@ -27,5 +27,5 @@ jobs:
         run: python backend/migrate.py
 
       - name: Disparar redeploy no Render
-        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != 'https://api.render.com/deploy/srv-dagr1rh5efls7394dft0?key=FzuCZQDqw_w' }}
         run: curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"

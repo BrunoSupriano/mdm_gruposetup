@@ -1,4 +1,4 @@
-name: Backend (migrations + deploy)
+name: Backend (migrations)
 
 on:
   push:
@@ -9,23 +9,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  migrate-and-deploy:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Instalar asyncpg
         run: pip install "asyncpg>=0.30,<0.31"
-
       - name: Rodar migrations no Neon
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python backend/migrate.py
-
-      - name: Disparar redeploy no Render
-        if: ${{ secrets.RENDER_DEPLOY_HOOK != 'https://api.render.com/deploy/srv-dagr1rh5efls7394dft0?key=FzuCZQDqw_w' }}
-        run: curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"

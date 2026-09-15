@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="22dp"
+    android:background="@drawable/glass_card_solid"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Configurações" android:textColor="@color/white"
+        android:textSize="20sp" android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="IDENTIFICADOR (ANDROID_ID)" android:textColor="@color/textMuted"
+        android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08"
+        android:paddingTop="18dp"/>
+    <TextView
+        android:id="@+id/txtAndroidId"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="-" android:textColor="@color/textOnDark" android:textSize="14sp"
+        android:textIsSelectable="true" android:paddingTop="6dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCopiarId"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Copiar ANDROID_ID" android:textColor="@color/white" android:textAllCaps="false"
+        android:layout_marginTop="10dp"
+        android:insetTop="0dp" android:insetBottom="0dp"
+        app:backgroundTint="@color/glassFill" app:strokeColor="@color/glassStroke"
+        app:strokeWidth="1dp" app:cornerRadius="12dp" app:elevation="0dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAtualizar"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Atualizar aplicativo" android:textColor="@color/white" android:textAllCaps="false"
+        android:layout_marginTop="12dp" android:visibility="gone"
+        android:insetTop="0dp" android:insetBottom="0dp"
+        app:backgroundTint="@color/accent" app:cornerRadius="12dp" app:elevation="0dp"/>
+
+    <TextView
+        android:id="@+id/txtVersao"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Versão -" android:textColor="@color/textMuted" android:textSize="12sp"
+        android:paddingTop="16dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFecharConfig"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Fechar" android:textColor="@color/white" android:textAllCaps="false"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>

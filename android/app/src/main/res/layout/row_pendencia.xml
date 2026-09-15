@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
@@ -13,11 +14,20 @@
         android:layout_width="0dp" android:layout_height="wrap_content"
         android:layout_weight="1" android:text="-" android:textColor="@color/white"
         android:textSize="14sp"/>
-    <Button
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPend"
+        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Resolver" android:textColor="@color/white" android:textAllCaps="false"
-        android:textSize="13sp" android:minWidth="0dp" android:minHeight="0dp"
-        android:paddingHorizontal="16dp" android:paddingVertical="8dp"
-        android:background="@drawable/btn_primary" android:stateListAnimator="@null"/>
+        android:layout_marginStart="12dp"
+        android:text="Resolver"
+        android:textColor="@color/white"
+        android:textAllCaps="false"
+        android:textSize="13sp"
+        android:minWidth="0dp" android:minHeight="0dp"
+        android:insetTop="0dp" android:insetBottom="0dp"
+        android:paddingHorizontal="18dp" android:paddingVertical="10dp"
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="12dp"
+        app:elevation="0dp"/>
 </LinearLayout>

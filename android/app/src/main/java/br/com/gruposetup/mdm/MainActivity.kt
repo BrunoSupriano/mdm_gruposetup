@@ -18,7 +18,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -28,6 +29,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var androidId: String
 
     private lateinit var rootScroll: View
+    private lateinit var offlineOverlay: View
+    private lateinit var btnTentarNovamente: Button
+    private lateinit var btnConfig: ImageButton
     private lateinit var statusPill: TextView
     private lateinit var txtLastLoc: TextView
     private lateinit var txtLastTime: TextView
@@ -47,24 +52,29 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnEnviarAgora: Button
     private lateinit var formCadastro: LinearLayout
     private lateinit var autoColaborador: AutoCompleteTextView
-    private lateinit var edtPatrimonio: TextView
-    private lateinit var chkImei: CheckBox
+    private lateinit var btnTemPatSim: MaterialButton
+    private lateinit var btnTemPatNao: MaterialButton
+    private lateinit var boxPatrimonio: LinearLayout
+    private lateinit var edtPatrimonio: EditText
     private lateinit var boxImei: LinearLayout
-    private lateinit var edtImei: TextView
+    private lateinit var edtImei: EditText
+    private lateinit var btnDiscarImei: Button
     private lateinit var btnSalvarCadastro: Button
     private lateinit var txtCadastroErro: TextView
     private lateinit var cadastroTravado: LinearLayout
     private lateinit var txtColabNome: TextView
     private lateinit var txtColabCargo: TextView
     private lateinit var txtDoc: TextView
-    private lateinit var txtAndroidId: TextView
-    private lateinit var btnCopiarId: Button
-    private lateinit var btnAtualizar: Button
-    private lateinit var txtVersao: TextView
 
     private var colabSelecionado: ColabItem? = null
+    // null = ainda não respondeu; true = tem patrimônio; false = usar IMEI
+    private var temPatrimonio: Boolean? = null
+    private var cadastrado = false
+
     private var dialogPend: AlertDialog? = null
     private var containerPend: LinearLayout? = null
+    private var dialogConfig: AlertDialog? = null
+    private var atualizacaoInfo: UpdateChecker.Info? = null
 
     private data class Pend(val texto: String, val acao: () -> Unit)
 
@@ -81,6 +91,9 @@ class MainActivity : AppCompatActivity() {
         androidId = DeviceInfo.androidId(this)
 
         rootScroll = findViewById(R.id.rootScroll)
+        offlineOverlay = findViewById(R.id.offlineOverlay)
+        btnTentarNovamente = findViewById(R.id.btnTentarNovamente)
+        btnConfig = findViewById(R.id.btnConfig)
         statusPill = findViewById(R.id.statusPill)
         txtLastLoc = findViewById(R.id.txtLastLoc)
         txtLastTime = findViewById(R.id.txtLastTime)
@@ -88,29 +101,19 @@ class MainActivity : AppCompatActivity() {
         btnEnviarAgora = findViewById(R.id.btnEnviarAgora)
         formCadastro = findViewById(R.id.formCadastro)
         autoColaborador = findViewById(R.id.autoColaborador)
+        btnTemPatSim = findViewById(R.id.btnTemPatSim)
+        btnTemPatNao = findViewById(R.id.btnTemPatNao)
+        boxPatrimonio = findViewById(R.id.boxPatrimonio)
         edtPatrimonio = findViewById(R.id.edtPatrimonio)
-        chkImei = findViewById(R.id.chkImei)
         boxImei = findViewById(R.id.boxImei)
         edtImei = findViewById(R.id.edtImei)
+        btnDiscarImei = findViewById(R.id.btnDiscarImei)
         btnSalvarCadastro = findViewById(R.id.btnSalvarCadastro)
         txtCadastroErro = findViewById(R.id.txtCadastroErro)
         cadastroTravado = findViewById(R.id.cadastroTravado)
         txtColabNome = findViewById(R.id.txtColabNome)
         txtColabCargo = findViewById(R.id.txtColabCargo)
         txtDoc = findViewById(R.id.txtDoc)
-        txtAndroidId = findViewById(R.id.txtAndroidId)
-        btnCopiarId = findViewById(R.id.btnCopiarId)
-        btnAtualizar = findViewById(R.id.btnAtualizar)
-        txtVersao = findViewById(R.id.txtVersao)
-
-        txtAndroidId.text = androidId
-        txtVersao.text = "Versão " + BuildConfig.VERSION_NAME + " (build " + BuildConfig.VERSION_CODE + ")"
-
-        btnCopiarId.setOnClickListener {
-            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                .setPrimaryClip(ClipData.newPlainText("ANDROID_ID", androidId))
-            Toast.makeText(this, "ANDROID_ID copiado", Toast.LENGTH_SHORT).show()
-        }
 
         autoColaborador.setAdapter(ColaboradorAdapter(this))
         autoColaborador.setOnItemClickListener { parent, _, position, _ ->
@@ -121,38 +124,48 @@ class MainActivity : AppCompatActivity() {
             if (sel != null && it?.toString() != sel.nome) colabSelecionado = null
         }
 
-        chkImei.setOnCheckedChangeListener { _, checked ->
-            boxImei.visibility = if (checked) View.VISIBLE else View.GONE
-            edtPatrimonio.isEnabled = !checked
-            if (checked) edtPatrimonio.text = "" else edtImei.text = ""
-        }
+        btnTemPatSim.setOnClickListener { escolherPatrimonio(true) }
+        btnTemPatNao.setOnClickListener { escolherPatrimonio(false) }
+        btnDiscarImei.setOnClickListener { discarCodigoImei() }
 
         btnSalvarCadastro.setOnClickListener { salvarCadastro() }
         btnEnviarAgora.setOnClickListener { enviarAgora() }
-        btnAtualizar.setOnClickListener {
-            btnAtualizar.isEnabled = false; btnAtualizar.text = "Baixando..."
-            lifecycleScope.launch {
-                val ok = withContext(Dispatchers.IO) { UpdateChecker.baixarEInstalar(this@MainActivity) }
-                if (!ok) { btnAtualizar.isEnabled = true; btnAtualizar.text = "Atualizar aplicativo"
-                    Toast.makeText(this@MainActivity, "Falha ao baixar", Toast.LENGTH_LONG).show() }
-            }
-        }
+        btnConfig.setOnClickListener { mostrarConfig() }
+        btnTentarNovamente.setOnClickListener { verificarConexao() }
 
         Scheduler.agendarDiario(this)
         mostrarUltima()
-        carregarCadastro()
     }
 
     override fun onResume() {
         super.onResume()
+        if (!verificarConexao()) return
         sincronizar()
         verificarAtualizacao()
         mostrarUltima()
+        if (!cadastrado) carregarCadastro()
     }
 
     override fun onDestroy() {
         dialogPend?.dismiss(); dialogPend = null
+        dialogConfig?.dismiss(); dialogConfig = null
         super.onDestroy()
+    }
+
+    // ---------------- conexão ----------------
+    /** Mostra/esconde overlay de offline. Retorna true se online. */
+    private fun verificarConexao(): Boolean {
+        val online = Permissions.temInternet(this)
+        offlineOverlay.visibility = if (online) View.GONE else View.VISIBLE
+        if (online && offlineOverlay.tag == "estava_offline") {
+            offlineOverlay.tag = null
+            // reconectou: reprocessa a tela
+            sincronizar(); verificarAtualizacao(); mostrarUltima()
+            if (!cadastrado) carregarCadastro()
+        } else if (!online) {
+            offlineOverlay.tag = "estava_offline"
+        }
+        return online
     }
 
     // ---------------- última localização ----------------
@@ -174,8 +187,10 @@ class MainActivity : AppCompatActivity() {
         txtEnvioStatus.setTextColor(ContextCompat.getColor(this, if (erro) R.color.error else R.color.ok))
     }
 
+    private fun enviarAgora() = enviarLocalizacao("manual")
+
     @SuppressLint("MissingPermission")
-    private fun enviarAgora() {
+    private fun enviarLocalizacao(origem: String) {
         if (!Permissions.temLocalizacaoBasica(this)) {
             reqLoc.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
             return
@@ -185,7 +200,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val fix = withContext(Dispatchers.IO) { LocationRepository.obterLocalizacao(this@MainActivity) }
             if (fix == null) { statusEnvio("Não consegui obter a localização agora", true); btnEnviarAgora.isEnabled = true; return@launch }
-            val payload = DeviceInfo.buildPayload(this@MainActivity, fix.location, fix.provider)
+            val payload = DeviceInfo.buildPayload(this@MainActivity, fix.location, fix.provider, origem)
             val code = withContext(Dispatchers.IO) { ApiClient.enviarComCodigo(payload) }
             btnEnviarAgora.isEnabled = true
             when {
@@ -201,6 +216,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ---------------- cadastro ----------------
+    private fun escolherPatrimonio(sim: Boolean) {
+        temPatrimonio = sim
+        txtCadastroErro.visibility = View.GONE
+        boxPatrimonio.visibility = if (sim) View.VISIBLE else View.GONE
+        boxImei.visibility = if (sim) View.GONE else View.VISIBLE
+        if (sim) edtImei.text?.clear() else edtPatrimonio.text?.clear()
+        estilizarToggle(btnTemPatSim, sim)
+        estilizarToggle(btnTemPatNao, !sim)
+    }
+
+    private fun estilizarToggle(btn: MaterialButton, selecionado: Boolean) {
+        val cor = if (selecionado) R.color.primary else R.color.glassFill
+        btn.setBackgroundColor(ContextCompat.getColor(this, cor))
+        // MaterialButton usa backgroundTintList; garante a cor:
+        btn.backgroundTintList = ContextCompat.getColorStateList(this, cor)
+    }
+
+    private fun discarCodigoImei() {
+        try {
+            // "*#06#" precisa do '#' codificado (%23) para o discador interpretar o MMI
+            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode("*#06#")))
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Não foi possível abrir o discador", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun carregarCadastro() {
         lifecycleScope.launch {
             val cad = withContext(Dispatchers.IO) { ApiClient.getCadastro(androidId) }
@@ -217,6 +259,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun mostrarTravado(nome: String, cargo: String, doc: String) {
+        cadastrado = true
         formCadastro.visibility = View.GONE
         cadastroTravado.visibility = View.VISIBLE
         txtColabNome.text = nome
@@ -235,10 +278,11 @@ class MainActivity : AppCompatActivity() {
         if (colab == null || autoColaborador.text.toString() != colab.nome) {
             erroCadastro("Escolha seu nome na lista de sugestões."); return
         }
-        val usaImei = chkImei.isChecked
+        val tem = temPatrimonio
+        if (tem == null) { erroCadastro("Responda se o aparelho tem patrimônio."); return }
         val patr = edtPatrimonio.text.toString().trim()
         val imei = edtImei.text.toString().trim()
-        if (!usaImei) {
+        if (tem) {
             if (patr.isEmpty() || !patr.all { it.isDigit() } || patr.length > 7) {
                 erroCadastro("Patrimônio: só números, até 7 dígitos."); return
             }
@@ -248,12 +292,14 @@ class MainActivity : AppCompatActivity() {
         btnSalvarCadastro.isEnabled = false; btnSalvarCadastro.text = "Salvando..."
         lifecycleScope.launch {
             val (ok, msg) = withContext(Dispatchers.IO) {
-                ApiClient.salvarCadastro(androidId, colab.id, if (usaImei) null else patr, if (usaImei) imei else null)
+                ApiClient.salvarCadastro(androidId, colab.id, if (tem) patr else null, if (tem) null else imei)
             }
             if (ok) {
-                val doc = if (usaImei) "IMEI: $imei" else "Patrimônio: $patr"
+                val doc = if (tem) "Patrimônio: $patr" else "IMEI: $imei"
                 mostrarTravado(colab.nome, colab.cargo, doc)
                 Toast.makeText(this@MainActivity, "Cadastro salvo!", Toast.LENGTH_SHORT).show()
+                // Dispara a primeira localização imediatamente após o cadastro
+                enviarLocalizacao("manual")
             } else {
                 btnSalvarCadastro.isEnabled = true; btnSalvarCadastro.text = "Salvar cadastro"
                 erroCadastro(traduzErro(msg))
@@ -263,21 +309,57 @@ class MainActivity : AppCompatActivity() {
 
     private fun traduzErro(msg: String): String = when {
         msg.contains("ja cadastrado") -> "Este aparelho já está cadastrado."
+        msg.contains("patrimonio OU imei") -> "Informe patrimônio OU IMEI."
         msg.contains("colaborador") -> "Colaborador não encontrado."
         msg.contains("patrimonio") -> "Patrimônio inválido (só números, até 7 dígitos)."
-        msg.contains("patrimonio OU imei") -> "Informe patrimônio OU IMEI."
         msg.contains("conexao") -> "Sem conexão. Tente de novo."
         else -> "Não foi possível salvar. Tente novamente."
+    }
+
+    // ---------------- configurações (engrenagem) ----------------
+    private fun mostrarConfig() {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_config, null)
+        view.findViewById<TextView>(R.id.txtAndroidId).text = androidId
+        view.findViewById<TextView>(R.id.txtVersao).text =
+            "Versão " + BuildConfig.VERSION_NAME + " (build " + BuildConfig.VERSION_CODE + ")"
+
+        view.findViewById<Button>(R.id.btnCopiarId).setOnClickListener {
+            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                .setPrimaryClip(ClipData.newPlainText("ANDROID_ID", androidId))
+            Toast.makeText(this, "ANDROID_ID copiado", Toast.LENGTH_SHORT).show()
+        }
+
+        val btnUpd = view.findViewById<Button>(R.id.btnAtualizar)
+        val info = atualizacaoInfo
+        if (info != null) {
+            btnUpd.visibility = View.VISIBLE
+            btnUpd.text = "Atualizar para " + info.versionName
+            btnUpd.setOnClickListener {
+                btnUpd.isEnabled = false; btnUpd.text = "Baixando..."
+                lifecycleScope.launch {
+                    val ok = withContext(Dispatchers.IO) { UpdateChecker.baixarEInstalar(this@MainActivity) }
+                    if (!ok) {
+                        btnUpd.isEnabled = true; btnUpd.text = "Atualizar aplicativo"
+                        Toast.makeText(this@MainActivity, "Falha ao baixar", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        } else btnUpd.visibility = View.GONE
+
+        dialogConfig = AlertDialog.Builder(this, R.style.Theme_SetupMDM_Dialog)
+            .setView(view).create()
+        view.findViewById<Button>(R.id.btnFecharConfig).setOnClickListener { dialogConfig?.dismiss() }
+        dialogConfig?.show()
     }
 
     // ---------------- atualização ----------------
     private fun verificarAtualizacao() {
         lifecycleScope.launch {
             val info = withContext(Dispatchers.IO) { UpdateChecker.checar() }
-            if (info != null) {
-                btnAtualizar.visibility = View.VISIBLE
-                btnAtualizar.text = "Atualizar para " + info.versionName
-            } else btnAtualizar.visibility = View.GONE
+            atualizacaoInfo = info
+            // sinaliza na engrenagem quando há atualização disponível
+            if (info != null) btnConfig.setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.ok))
+            else btnConfig.clearColorFilter()
         }
     }
 

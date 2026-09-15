@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablets / telas grandes: mais respiro e conteúdo centralizado. -->
+    <dimen name="screen_padding">40dp</dimen>
+    <dimen name="content_max_width">560dp</dimen>
+</resources>

@@ -48,7 +48,7 @@ object DeviceInfo {
     private fun agora(): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).format(Date())
 
-    fun buildPayload(context: Context, loc: Location, provider: String): JSONObject {
+    fun buildPayload(context: Context, loc: Location, provider: String, origem: String = "agendado"): JSONObject {
         val json = JSONObject()
         json.put("android_id", androidId(context))
         json.put("fabricante", Build.MANUFACTURER)
@@ -62,6 +62,7 @@ object DeviceInfo {
         json.put("lon", loc.longitude)
         json.put("precisao_m", if (loc.hasAccuracy()) loc.accuracy else JSONObject.NULL)
         json.put("provider", provider)
+        json.put("origem", origem)
         json.put("capturado_em", agora())
         json.put("app_versao", BuildConfig.VERSION_NAME)
         return json

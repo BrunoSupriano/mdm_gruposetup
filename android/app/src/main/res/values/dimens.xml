@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Padding lateral do conteúdo. Sobrescrito em telas grandes (tablets). -->
+    <dimen name="screen_padding">22dp</dimen>
+    <!-- Largura máxima do conteúdo. 0dp = ocupa tudo (celulares). -->
+    <dimen name="content_max_width">0dp</dimen>
+</resources>

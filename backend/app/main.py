@@ -113,6 +113,7 @@ class Posicao(BaseModel):
     lon: float
     precisao_m: Optional[float] = None
     provider: Optional[str] = None
+    origem: Optional[str] = None
     capturado_em: Optional[str] = None
     app_versao: Optional[str] = None
 
@@ -140,6 +141,7 @@ async def health():
 @app.post("/api/v1/posicoes", dependencies=[Depends(auth_device)])
 async def receber(p: Posicao):
     capturado = _parse_dt(p.capturado_em)
+    origem = p.origem if p.origem in ("agendado", "manual") else "agendado"
     async with pool.acquire() as con:
         async with con.transaction():
             await con.execute(
@@ -163,12 +165,12 @@ async def receber(p: Posicao):
                 """
                 INSERT INTO mdm.posicoes
                     (android_id, lat, lon, precisao_m, provider, bateria_pct,
-                     operadora, imei, capturado_em, app_versao)
+                     operadora, origem, capturado_em, app_versao)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
                 ON CONFLICT (android_id, capturado_em) DO NOTHING
                 """,
                 p.android_id, p.lat, p.lon, p.precisao_m, p.provider,
-                p.bateria_pct, p.operadora, p.imei, capturado, p.app_versao,
+                p.bateria_pct, p.operadora, origem, capturado, p.app_versao,
             )
     return {"ok": True}
 

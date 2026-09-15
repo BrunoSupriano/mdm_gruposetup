@@ -22,6 +22,9 @@ class DailyLocationWorker(appContext: Context, params: WorkerParameters) :
         val fix = LocationRepository.obterLocalizacao(ctx) ?: return Result.retry()
         val payload = DeviceInfo.buildPayload(ctx, fix.location, fix.provider)
         val ok = ApiClient.enviar(payload)
+        if (ok) {
+            Prefs.salvarUltima(ctx, fix.location.latitude, fix.location.longitude, System.currentTimeMillis())
+        }
 
         // aproveita o ciclo diario para checar atualizacao do app
         val info = UpdateChecker.checar()

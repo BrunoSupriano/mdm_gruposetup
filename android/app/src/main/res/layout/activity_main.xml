@@ -1,103 +1,220 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@color/bg">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="22dp">
 
+        <!-- Header -->
         <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/app_name" android:textColor="@color/neutral"
-            android:textSize="22sp" android:textStyle="bold" android:paddingBottom="4dp"/>
-
-        <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Monitoramento de localizacao do dispositivo corporativo"
-            android:textColor="@color/neutral" android:textSize="13sp" android:paddingBottom="16dp"/>
-
-        <TextView
-            android:id="@+id/statusGeral"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Verificando..." android:textColor="@color/white"
-            android:textSize="18sp" android:textStyle="bold" android:gravity="center"
-            android:padding="18dp" android:background="@color/neutral" android:layout_marginBottom="20dp"/>
-
-        <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Status" android:textColor="@color/neutral"
-            android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-
-        <TextView android:id="@+id/linhaLoc" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-        <TextView android:id="@+id/linhaBg" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-        <TextView android:id="@+id/linhaGps" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-        <TextView android:id="@+id/linhaNotif" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-        <TextView android:id="@+id/linhaBateria" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-        <TextView android:id="@+id/linhaGms" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:paddingVertical="6dp" android:text="-"/>
-
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#DDDDDD" android:layout_marginVertical="16dp"/>
-
-        <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Identificacao do aparelho" android:textColor="@color/neutral"
-            android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
-
-        <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="ANDROID_ID (use na planilha de cadastro):"
-            android:textColor="@color/neutral" android:textSize="12sp"/>
-
-        <TextView
-            android:id="@+id/txtAndroidId"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="-" android:textColor="@color/primary" android:textSize="16sp"
-            android:textStyle="bold" android:textIsSelectable="true" android:paddingVertical="4dp"/>
-
-        <Button
-            android:id="@+id/btnCopiarId"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Copiar ID" android:textColor="@color/white"
-            android:backgroundTint="@color/primaryLight" android:layout_marginTop="4dp"/>
+            android:text="Setup MDM" android:textColor="@color/textOnDark"
+            android:textSize="26sp" android:textStyle="bold" android:letterSpacing="0.01"/>
+        <TextView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Monitoramento do dispositivo corporativo"
+            android:textColor="@color/textMuted" android:textSize="13sp"
+            android:paddingTop="2dp" android:paddingBottom="18dp"/>
+
+        <!-- Status pill -->
+        <TextView
+            android:id="@+id/statusPill"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Verificando..." android:textColor="@color/textOnDark"
+            android:textSize="14sp" android:textStyle="bold"
+            android:paddingHorizontal="18dp" android:paddingVertical="10dp"
+            android:background="@drawable/pill_ok" android:layout_marginBottom="18dp"/>
+
+        <!-- Card: última localização -->
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/glass_card"
+            android:padding="20dp" android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="ÚLTIMA LOCALIZAÇÃO" android:textColor="@color/textMuted"
+                android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+            <TextView
+                android:id="@+id/txtLastLoc"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Aguardando primeiro envio" android:textColor="@color/textOnDark"
+                android:textSize="18sp" android:textStyle="bold" android:paddingTop="8dp"/>
+            <TextView
+                android:id="@+id/txtLastTime"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="—" android:textColor="@color/textMuted"
+                android:textSize="13sp" android:paddingTop="2dp"/>
+
+            <TextView
+                android:id="@+id/txtEnvioStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="" android:textColor="@color/ok" android:textSize="13sp"
+                android:paddingTop="8dp" android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/btnEnviarAgora"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Enviar localização agora" android:textColor="@color/white"
+                android:textAllCaps="false" android:background="@drawable/btn_accent"
+                android:layout_marginTop="14dp" android:stateListAnimator="@null"/>
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Envio automático 1x por dia"
+                android:textColor="@color/textMuted" android:textSize="11sp"
+                android:gravity="center" android:paddingTop="8dp"/>
+        </LinearLayout>
+
+        <!-- Card: cadastro -->
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/glass_card"
+            android:padding="20dp" android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="CADASTRO DO DISPOSITIVO" android:textColor="@color/textMuted"
+                android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+
+            <!-- Form (visível se ainda não cadastrado) -->
+            <LinearLayout
+                android:id="@+id/formCadastro"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Seu nome ou matrícula" android:textColor="@color/textOnDark"
+                    android:textSize="14sp" android:paddingBottom="6dp"/>
+                <AutoCompleteTextView
+                    android:id="@+id/autoColaborador"
+                    android:layout_width="match_parent" android:layout_height="52dp"
+                    android:hint="Digite para buscar..." android:textColorHint="@color/textMuted"
+                    android:textColor="@color/textOnDark" android:textSize="15sp"
+                    android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                    android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
+
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Patrimônio (até 7 dígitos)" android:textColor="@color/textOnDark"
+                    android:textSize="14sp" android:paddingTop="16dp" android:paddingBottom="6dp"/>
+                <EditText
+                    android:id="@+id/edtPatrimonio"
+                    android:layout_width="match_parent" android:layout_height="52dp"
+                    android:hint="Ex.: 1234567" android:textColorHint="@color/textMuted"
+                    android:textColor="@color/textOnDark" android:textSize="15sp"
+                    android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                    android:inputType="number" android:maxLength="7"/>
+
+                <CheckBox
+                    android:id="@+id/chkImei"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Não tenho patrimônio, usar IMEI"
+                    android:textColor="@color/textMuted" android:textSize="13sp"
+                    android:buttonTint="@color/primaryLight" android:paddingTop="10dp"/>
+
+                <LinearLayout
+                    android:id="@+id/boxImei"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:visibility="gone">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="IMEI (disque *#06# para ver)" android:textColor="@color/textOnDark"
+                        android:textSize="14sp" android:paddingTop="6dp" android:paddingBottom="6dp"/>
+                    <EditText
+                        android:id="@+id/edtImei"
+                        android:layout_width="match_parent" android:layout_height="52dp"
+                        android:hint="Ex.: 356938035643809" android:textColorHint="@color/textMuted"
+                        android:textColor="@color/textOnDark" android:textSize="15sp"
+                        android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                        android:inputType="number" android:maxLength="17"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtCadastroErro"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="" android:textColor="@color/error" android:textSize="13sp"
+                    android:paddingTop="10dp" android:visibility="gone"/>
+
+                <Button
+                    android:id="@+id/btnSalvarCadastro"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Salvar cadastro" android:textColor="@color/white"
+                    android:textAllCaps="false" android:background="@drawable/btn_primary"
+                    android:layout_marginTop="16dp" android:stateListAnimator="@null"/>
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Depois de salvar, o cadastro não pode ser alterado."
+                    android:textColor="@color/textMuted" android:textSize="11sp"
+                    android:gravity="center" android:paddingTop="8dp"/>
+            </LinearLayout>
+
+            <!-- Travado (visível depois de cadastrado) -->
+            <LinearLayout
+                android:id="@+id/cadastroTravado"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingTop="12dp" android:visibility="gone">
+                <TextView
+                    android:id="@+id/txtColabNome"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="—" android:textColor="@color/textOnDark"
+                    android:textSize="18sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/txtColabCargo"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="" android:textColor="@color/textMuted" android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/txtDoc"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="" android:textColor="@color/textOnDark" android:textSize="15sp"
+                    android:paddingTop="10dp"/>
+                <TextView
+                    android:id="@+id/txtCadInfo"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🔒 Cadastro concluído" android:textColor="@color/ok"
+                    android:textSize="12sp" android:paddingTop="10dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Card: detalhes técnicos -->
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/glass_card"
+            android:padding="20dp" android:layout_marginBottom="10dp">
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="IDENTIFICADOR (ANDROID_ID)" android:textColor="@color/textMuted"
+                android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08"/>
+            <TextView
+                android:id="@+id/txtAndroidId"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="-" android:textColor="@color/textOnDark" android:textSize="14sp"
+                android:textIsSelectable="true" android:paddingTop="6dp"/>
+            <Button
+                android:id="@+id/btnCopiarId"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Copiar ID" android:textColor="@color/white" android:textAllCaps="false"
+                android:background="@drawable/btn_ghost" android:layout_marginTop="8dp"
+                android:stateListAnimator="@null"/>
+            <Button
+                android:id="@+id/btnAtualizar"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Atualizar aplicativo" android:textColor="@color/white" android:textAllCaps="false"
+                android:background="@drawable/btn_accent" android:layout_marginTop="12dp"
+                android:visibility="gone" android:stateListAnimator="@null"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/txtVersao"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Versao -" android:textColor="@color/neutral"
-            android:textSize="12sp" android:paddingTop="12dp"/>
-
-        <Button
-            android:id="@+id/btnAtualizar"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Atualizar aplicativo" android:textColor="@color/white"
-            android:backgroundTint="@color/accent" android:layout_marginTop="8dp"
-            android:visibility="gone"/>
-
-        <View android:layout_width="match_parent" android:layout_height="1dp"
-            android:background="#DDDDDD" android:layout_marginVertical="16dp"/>
-
-        <Button
-            android:id="@+id/btnCorrigir"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Concluir configuracao" android:textColor="@color/white"
-            android:backgroundTint="@color/primary"/>
-
-        <Button
-            android:id="@+id/btnEnviarAgora"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="10dp" android:text="Enviar localizacao agora"
-            android:textColor="@color/white" android:backgroundTint="@color/neutral"/>
-
-        <TextView
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Este dispositivo e da empresa e seu monitoramento segue a politica de uso interna."
-            android:textColor="@color/neutral" android:textSize="11sp"/>
+            android:text="Versão -" android:textColor="@color/textMuted" android:textSize="11sp"
+            android:gravity="center" android:paddingTop="6dp"/>
 
     </LinearLayout>
 </ScrollView>

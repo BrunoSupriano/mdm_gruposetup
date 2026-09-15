@@ -270,3 +270,96 @@ async def publicar_release(
             version_code, version_name, obrigatoria, notas, len(apk), apk,
         )
     return {"ok": True, "version_code": version_code, "tamanho_bytes": len(apk)}
+
+
+# ---------------------- cadastro (colaborador + patrimonio/imei) ----------------------
+class Cadastro(BaseModel):
+    colaborador_id: int
+    patrimonio: Optional[str] = None
+    imei: Optional[str] = None
+
+
+@app.get("/api/v1/colaboradores", dependencies=[Depends(auth_device)])
+async def buscar_colaboradores(q: str = "", limite: int = 12):
+    q = (q or "").strip()
+    if len(q) < 2:
+        return []
+    limite = max(1, min(limite, 30))
+    async with pool.acquire() as con:
+        rows = await con.fetch(
+            """
+            SELECT cadastro_id, nome_completo, nome_cargo
+            FROM mdm.colab_ativos
+            WHERE nome_completo ILIKE '%' || $1 || '%'
+               OR cadastro_id::text LIKE $1 || '%'
+            ORDER BY nome_completo
+            LIMIT $2
+            """,
+            q, limite,
+        )
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/v1/dispositivos/{android_id}/cadastro", dependencies=[Depends(auth_device)])
+async def obter_cadastro(android_id: str):
+    async with pool.acquire() as con:
+        row = await con.fetchrow(
+            """
+            SELECT colaborador_id, colaborador_nome, colaborador_cargo,
+                   patrimonio, imei, cadastrado_em
+            FROM mdm.devices WHERE android_id = $1
+            """,
+            android_id,
+        )
+    if not row or row["cadastrado_em"] is None:
+        return {"cadastrado": False}
+    d = dict(row)
+    d["cadastrado"] = True
+    return d
+
+
+@app.post("/api/v1/dispositivos/{android_id}/cadastro", dependencies=[Depends(auth_device)])
+async def salvar_cadastro(android_id: str, c: Cadastro):
+    patrimonio = (c.patrimonio or "").strip()
+    imei = (c.imei or "").strip()
+    tem_pat = bool(patrimonio)
+    tem_imei = bool(imei)
+    if tem_pat == tem_imei:
+        raise HTTPException(status_code=400, detail="informe patrimonio OU imei (exatamente um)")
+    if tem_pat and (not patrimonio.isdigit() or len(patrimonio) > 7):
+        raise HTTPException(status_code=400, detail="patrimonio deve ser numerico com ate 7 digitos")
+    async with pool.acquire() as con:
+        atual = await con.fetchrow(
+            "SELECT cadastrado_em FROM mdm.devices WHERE android_id = $1", android_id
+        )
+        if atual and atual["cadastrado_em"] is not None:
+            raise HTTPException(status_code=409, detail="dispositivo ja cadastrado")
+        colab = await con.fetchrow(
+            "SELECT cadastro_id, nome_completo, nome_cargo FROM mdm.colab_ativos WHERE cadastro_id = $1",
+            c.colaborador_id,
+        )
+        if not colab:
+            raise HTTPException(status_code=404, detail="colaborador nao encontrado")
+        await con.execute(
+            "INSERT INTO mdm.devices (android_id) VALUES ($1) ON CONFLICT (android_id) DO NOTHING",
+            android_id,
+        )
+        await con.execute(
+            """
+            UPDATE mdm.devices SET
+                colaborador_id    = $2,
+                colaborador_nome  = $3,
+                colaborador_cargo = $4,
+                patrimonio        = $5,
+                imei              = COALESCE($6, imei),
+                cadastrado_em     = now()
+            WHERE android_id = $1
+            """,
+            android_id, colab["cadastro_id"], colab["nome_completo"], colab["nome_cargo"],
+            (patrimonio or None), (imei or None),
+        )
+    return {
+        "ok": True, "cadastrado": True,
+        "colaborador_nome": colab["nome_completo"], "colaborador_cargo": colab["nome_cargo"],
+        "patrimonio": patrimonio or None, "imei": imei or None,
+    }

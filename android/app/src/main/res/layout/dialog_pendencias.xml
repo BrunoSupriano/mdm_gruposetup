@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="22dp"
+    android:background="@drawable/glass_card_solid"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Configuração pendente" android:textColor="@color/white"
+        android:textSize="20sp" android:textStyle="bold"/>
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Resolva os itens abaixo para ativar o monitoramento."
+        android:textColor="@color/textMuted" android:textSize="13sp"
+        android:paddingTop="4dp" android:paddingBottom="16dp"/>
+
+    <LinearLayout
+        android:id="@+id/listaPendencias"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical"/>
+</LinearLayout>

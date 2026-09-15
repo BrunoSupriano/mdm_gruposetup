@@ -29,3 +29,7 @@ export async function login(senha) {
 export const listarDispositivos = () => req('/api/v1/dispositivos')
 export const historico = (id, limite = 300) =>
   req('/api/v1/dispositivos/' + encodeURIComponent(id) + '/posicoes?limite=' + limite)
+
+// Destrava o cadastro do aparelho (usa a sessão do painel; o backend também aceita X-Admin-Key)
+export const resetarCadastro = (id) =>
+  req('/api/v1/dispositivos/' + encodeURIComponent(id) + '/cadastro', { method: 'DELETE' })

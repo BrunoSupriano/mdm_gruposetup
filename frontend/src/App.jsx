@@ -47,13 +47,18 @@ function Dispositivos({ onAbrir }) {
     <div className="card">
       <table>
         <thead>
-          <tr><th>Aparelho</th><th>Patrimônio</th><th>Bateria</th><th>Último visto</th><th></th></tr>
+          <tr><th>Aparelho</th><th>Responsável</th><th>Patrimônio</th><th>Bateria</th><th>Último visto</th><th></th></tr>
         </thead>
         <tbody>
           {lista.map(d => (
             <tr key={d.android_id} className="click" onClick={() => onAbrir(d)}>
               <td><b>{d.fabricante || ''} {d.modelo || d.android_id}</b><br/>
                   <span className="muted">{d.android_id}</span></td>
+              <td>
+                {d.colaborador_nome
+                  ? <><b>{d.colaborador_nome}</b>{d.colaborador_cargo && <><br/><span className="muted">{d.colaborador_cargo}</span></>}</>
+                  : <span className="muted">não cadastrado</span>}
+              </td>
               <td>{d.patrimonio || <span className="muted">—</span>}</td>
               <td>{d.bateria_pct != null ? d.bateria_pct + '%' : '—'}</td>
               <td>{fmt(d.ultimo_visto)}</td>
@@ -80,18 +85,64 @@ function FitBounds({ pontos }) {
 function Historico({ device, onVoltar }) {
   const [pts, setPts] = useState(null)
   const [erro, setErro] = useState('')
+  const [confirmando, setConfirmando] = useState(false)
+  const [resetando, setResetando] = useState(false)
+  const [resetMsg, setResetMsg] = useState('')
   useEffect(() => {
     api.historico(device.android_id).then(setPts).catch(() => setErro('Falha ao carregar histórico'))
   }, [device])
+
+  async function resetar() {
+    setResetando(true); setResetMsg('')
+    try {
+      await api.resetarCadastro(device.android_id)
+      setResetMsg('Cadastro limpo. O aparelho volta a pedir o cadastro no próximo abrir do app.')
+      setConfirmando(false)
+    } catch {
+      setResetMsg('Falha ao limpar o cadastro. Tente novamente.')
+    } finally {
+      setResetando(false)
+    }
+  }
+
   if (erro) return <div className="card err">{erro}</div>
   if (!pts) return <div className="card muted">Carregando...</div>
   const centro = pts.length ? [pts[0].lat, pts[0].lon] : [-28.68, -49.37]
   const linha = pts.map(p => [p.lat, p.lon])
+  const jaResetado = resetMsg.startsWith('Cadastro limpo')
   return (
     <div>
       <button className="link" onClick={onVoltar}>&larr; voltar</button>
       <h2>{device.fabricante || ''} {device.modelo || device.android_id}</h2>
       <p className="muted">{device.android_id} · {pts.length} posições</p>
+
+      <div className="card">
+        <div className="row-between">
+          <div>
+            <div className="label">Responsável atual</div>
+            {device.colaborador_nome
+              ? <div><b>{device.colaborador_nome}</b>{device.colaborador_cargo ? ' · ' + device.colaborador_cargo : ''}
+                  {device.patrimonio ? <span className="muted"> · Patrimônio {device.patrimonio}</span>
+                    : device.imei ? <span className="muted"> · IMEI {device.imei}</span> : null}</div>
+              : device.patrimonio
+                ? <div><span className="muted">Patrimônio {device.patrimonio}</span></div>
+                : <div className="muted">Sem nome do responsável (atualize o backend para exibir)</div>}
+          </div>
+          {!jaResetado && (
+            confirmando
+              ? <div className="reset-confirm">
+                  <span>Limpar o cadastro deste aparelho?</span>
+                  <button className="danger" disabled={resetando} onClick={resetar}>
+                    {resetando ? 'Limpando...' : 'Sim, limpar'}
+                  </button>
+                  <button className="link" disabled={resetando} onClick={() => setConfirmando(false)}>cancelar</button>
+                </div>
+              : <button className="danger-outline" onClick={() => setConfirmando(true)}>Limpar cadastro</button>
+          )}
+        </div>
+        {resetMsg && <div className={jaResetado ? 'ok-msg' : 'err'}>{resetMsg}</div>}
+      </div>
+
       {pts.length > 0 && (
         <div className="map">
           <MapContainer center={centro} zoom={13} style={{ height: '100%', width: '100%' }}>

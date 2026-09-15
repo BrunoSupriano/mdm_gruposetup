@@ -23,11 +23,10 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
-      - uses: gradle/actions/setup-gradle@v4     # <-- adiciona esta linha
-
-      - name: Instalar componentes do SDK
-        run: yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" >/dev/null
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Restaurar keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
@@ -49,7 +48,6 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --no-daemon
-      
 
       - name: Ler versao do build.gradle.kts
         id: ver
@@ -62,6 +60,7 @@ jobs:
       - name: Publicar GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.name }}
           files: android/app/build/outputs/apk/release/app-release.apk
           name: "v${{ steps.ver.outputs.name }} (build ${{ steps.ver.outputs.code }})"
 

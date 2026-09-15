@@ -16,4 +16,8 @@
     <color name="textOnDark">#FFFFFF</color>
     <color name="textMuted">#B8FFFFFF</color>
     <color name="scrim">#66001A15</color>
+    <!-- aviso vermelho suave (glass) -->
+    <color name="redGlassFill">#33C0392B</color>
+    <color name="redGlassStroke">#66C0392B</color>
+    <color name="redSoft">#F1948A</color>
 </resources>

@@ -45,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var offlineOverlay: View
     private lateinit var btnTentarNovamente: Button
     private lateinit var btnConfig: ImageButton
+    private lateinit var updateBanner: LinearLayout
+    private lateinit var btnAtualizarMain: Button
     private lateinit var statusPill: TextView
     private lateinit var txtLastLoc: TextView
     private lateinit var txtLastTime: TextView
@@ -94,6 +96,8 @@ class MainActivity : AppCompatActivity() {
         offlineOverlay = findViewById(R.id.offlineOverlay)
         btnTentarNovamente = findViewById(R.id.btnTentarNovamente)
         btnConfig = findViewById(R.id.btnConfig)
+        updateBanner = findViewById(R.id.updateBanner)
+        btnAtualizarMain = findViewById(R.id.btnAtualizarMain)
         statusPill = findViewById(R.id.statusPill)
         txtLastLoc = findViewById(R.id.txtLastLoc)
         txtLastTime = findViewById(R.id.txtLastTime)
@@ -132,6 +136,7 @@ class MainActivity : AppCompatActivity() {
         btnEnviarAgora.setOnClickListener { enviarAgora() }
         btnConfig.setOnClickListener { mostrarConfig() }
         btnTentarNovamente.setOnClickListener { verificarConexao() }
+        btnAtualizarMain.setOnClickListener { baixarAtualizacao(btnAtualizarMain) }
 
         Scheduler.agendarDiario(this)
         mostrarUltima()
@@ -334,17 +339,28 @@ class MainActivity : AppCompatActivity() {
         if (info != null) {
             btnUpd.visibility = View.VISIBLE
             btnUpd.text = "Atualizar para " + info.versionName
-            btnUpd.setOnClickListener {
-                btnUpd.isEnabled = false; btnUpd.text = "Baixando..."
-                lifecycleScope.launch {
-                    val ok = withContext(Dispatchers.IO) { UpdateChecker.baixarEInstalar(this@MainActivity) }
-                    if (!ok) {
-                        btnUpd.isEnabled = true; btnUpd.text = "Atualizar aplicativo"
-                        Toast.makeText(this@MainActivity, "Falha ao baixar", Toast.LENGTH_LONG).show()
-                    }
+            btnUpd.setOnClickListener { baixarAtualizacao(btnUpd) }
+        } else btnUpd.visibility = View.GONE
+
+        val btnVerificar = view.findViewById<Button>(R.id.btnVerificarUpd)
+        btnVerificar.setOnClickListener {
+            btnVerificar.isEnabled = false; btnVerificar.text = "Verificando..."
+            lifecycleScope.launch {
+                val nova = withContext(Dispatchers.IO) { UpdateChecker.checar() }
+                atualizacaoInfo = nova
+                aplicarEstadoAtualizacao()
+                btnVerificar.isEnabled = true; btnVerificar.text = "Verificar atualizações"
+                if (nova != null) {
+                    btnUpd.visibility = View.VISIBLE
+                    btnUpd.text = "Atualizar para " + nova.versionName
+                    btnUpd.setOnClickListener { baixarAtualizacao(btnUpd) }
+                    Toast.makeText(this@MainActivity, "Atualização disponível: " + nova.versionName, Toast.LENGTH_LONG).show()
+                } else {
+                    btnUpd.visibility = View.GONE
+                    Toast.makeText(this@MainActivity, "Você já está na versão mais recente", Toast.LENGTH_SHORT).show()
                 }
             }
-        } else btnUpd.visibility = View.GONE
+        }
 
         dialogConfig = AlertDialog.Builder(this, R.style.Theme_SetupMDM_Dialog)
             .setView(view).create()
@@ -357,9 +373,31 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val info = withContext(Dispatchers.IO) { UpdateChecker.checar() }
             atualizacaoInfo = info
-            // sinaliza na engrenagem quando há atualização disponível
-            if (info != null) btnConfig.setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.ok))
-            else btnConfig.clearColorFilter()
+            aplicarEstadoAtualizacao()
+        }
+    }
+
+    /** Reflete o estado da atualização na engrenagem e no banner da tela. */
+    private fun aplicarEstadoAtualizacao() {
+        val info = atualizacaoInfo
+        if (info != null) {
+            btnConfig.setColorFilter(ContextCompat.getColor(this, R.color.ok))
+            updateBanner.visibility = View.VISIBLE
+            findViewById<TextView>(R.id.txtUpdateTitulo).text = "Atualização disponível — " + info.versionName
+        } else {
+            btnConfig.clearColorFilter()
+            updateBanner.visibility = View.GONE
+        }
+    }
+
+    private fun baixarAtualizacao(botao: Button) {
+        botao.isEnabled = false; botao.text = "Baixando..."
+        lifecycleScope.launch {
+            val ok = withContext(Dispatchers.IO) { UpdateChecker.baixarEInstalar(this@MainActivity) }
+            if (!ok) {
+                botao.isEnabled = true; botao.text = "Atualizar agora"
+                Toast.makeText(this@MainActivity, "Falha ao baixar a atualização", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

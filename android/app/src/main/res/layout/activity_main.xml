@@ -90,7 +90,7 @@
                     android:text="Enviar localização agora" android:textColor="@color/white"
                     android:textAllCaps="false" android:layout_marginTop="14dp"
                     android:insetTop="0dp" android:insetBottom="0dp"
-                    app:backgroundTint="@color/accent" app:cornerRadius="14dp" app:elevation="0dp"/>
+                    app:backgroundTint="@color/primary" app:cornerRadius="14dp" app:elevation="0dp"/>
                 <TextView
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="Envio automático 1x por dia"
@@ -267,20 +267,47 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Aviso: não desinstalar -->
+            <!-- Banner: atualização disponível (visível só quando há update) -->
+            <LinearLayout
+                android:id="@+id/updateBanner"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/glass_card" android:padding="18dp"
+                android:layout_marginBottom="16dp" android:visibility="gone">
+                <TextView
+                    android:id="@+id/txtUpdateTitulo"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Atualização disponível" android:textColor="@color/textOnDark"
+                    android:textSize="15sp" android:textStyle="bold"/>
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Uma nova versão do app está pronta para instalar."
+                    android:textColor="@color/textMuted" android:textSize="12sp" android:paddingTop="2dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAtualizarMain"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Atualizar agora" android:textColor="@color/white"
+                    android:textAllCaps="false" android:layout_marginTop="12dp"
+                    android:insetTop="0dp" android:insetBottom="0dp"
+                    app:backgroundTint="@color/primary" app:cornerRadius="14dp" app:elevation="0dp"/>
+            </LinearLayout>
+
+            <!-- Aviso: não desinstalar (vermelho suave, glass) -->
             <LinearLayout
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"
-                android:background="@drawable/glass_input" android:padding="16dp"
+                android:background="@drawable/glass_red" android:padding="16dp"
                 android:layout_marginBottom="6dp">
                 <TextView
                     android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="⚠" android:textSize="20sp" android:paddingEnd="12dp"/>
+                    android:text="⚠" android:textColor="@color/redSoft"
+                    android:textSize="20sp" android:paddingEnd="12dp"/>
                 <TextView
                     android:layout_width="0dp" android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Não desinstale este aplicativo. Ele é gerenciado pela TI da empresa."
-                    android:textColor="@color/textOnDark" android:textSize="13sp"/>
+                    android:textColor="@color/redSoft" android:textSize="13sp"/>
             </LinearLayout>
 
         </LinearLayout>
@@ -316,7 +343,7 @@
             android:textAllCaps="false" android:layout_marginTop="24dp"
             android:insetTop="0dp" android:insetBottom="0dp"
             android:paddingHorizontal="28dp"
-            app:backgroundTint="@color/accent" app:cornerRadius="14dp" app:elevation="0dp"/>
+            app:backgroundTint="@color/primary" app:cornerRadius="14dp" app:elevation="0dp"/>
     </LinearLayout>
 
 </FrameLayout>

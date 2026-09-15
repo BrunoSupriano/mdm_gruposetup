@@ -88,6 +88,16 @@ def auth_painel(authorization: str = Header(default="")):
         raise HTTPException(status_code=401, detail="painel nao autorizado")
 
 
+def auth_painel_ou_admin(authorization: str = Header(default=""), x_admin_key: str = Header(default="")):
+    """Aceita a sessao do painel (Bearer) OU a chave admin (X-Admin-Key).
+    Usado pelo reset: dá pra chamar tanto pelo painel logado quanto por curl da T.I."""
+    if ADMIN_KEY and hmac.compare_digest(x_admin_key, ADMIN_KEY):
+        return
+    if authorization.startswith("Bearer ") and token_valido(authorization[7:]):
+        return
+    raise HTTPException(status_code=401, detail="nao autorizado")
+
+
 class Login(BaseModel):
     senha: str
 
@@ -183,6 +193,7 @@ async def listar_dispositivos():
             """
             SELECT d.android_id, d.patrimonio, d.fabricante, d.modelo,
                    d.versao_android, d.imei, d.app_versao, d.ultimo_visto,
+                   d.colaborador_nome, d.colaborador_cargo, d.cadastrado_em,
                    u.lat, u.lon, u.capturado_em AS ultima_posicao_em,
                    u.bateria_pct, u.operadora
             FROM mdm.devices d
@@ -365,3 +376,29 @@ async def salvar_cadastro(android_id: str, c: Cadastro):
         "colaborador_nome": colab["nome_completo"], "colaborador_cargo": colab["nome_cargo"],
         "patrimonio": patrimonio or None, "imei": imei or None,
     }
+
+
+@app.delete("/api/v1/dispositivos/{android_id}/cadastro", dependencies=[Depends(auth_painel_ou_admin)])
+async def resetar_cadastro(android_id: str):
+    """Destrava o cadastro de um device (uso T.I., pelo painel ou por curl com X-Admin-Key).
+    O aparelho volta a mostrar o formulario em branco no proximo abrir do app. Nao apaga posicoes."""
+    async with pool.acquire() as con:
+        row = await con.fetchrow(
+            "SELECT cadastrado_em FROM mdm.devices WHERE android_id = $1", android_id
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="dispositivo nao encontrado")
+        await con.execute(
+            """
+            UPDATE mdm.devices SET
+                colaborador_id    = NULL,
+                colaborador_nome  = NULL,
+                colaborador_cargo = NULL,
+                patrimonio        = NULL,
+                imei              = NULL,
+                cadastrado_em     = NULL
+            WHERE android_id = $1
+            """,
+            android_id,
+        )
+    return {"ok": True, "cadastrado": False, "resetado": True}

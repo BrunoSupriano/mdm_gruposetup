@@ -1,13 +1,43 @@
 # Setup MDM — Monorepo
 
-Rastreamento de localização diária de dispositivos corporativos.
-Tudo controlado por Git + GitHub Actions.
+Sistema interno do **Grupo Setup** para saber **onde estão os celulares corporativos**.
+A empresa distribui aparelhos Android para os colaboradores; este projeto instala em cada
+um deles um app próprio que, **1x por dia**, envia a localização do aparelho para um banco
+de dados central. A T.I. acompanha tudo por um painel web — útil principalmente em caso de
+**perda ou furto** do aparelho.
+
+### O que ele faz
+
+- O app roda em segundo plano e manda **uma posição por dia** (mais o modelo, fabricante,
+  versão do Android, bateria e operadora). Também dá pra forçar um envio na hora pelo próprio app.
+- No **primeiro uso**, o colaborador se cadastra no app (nome/matrícula + patrimônio **ou** IMEI).
+  Depois disso o cadastro trava; só a T.I. destrava (reset) pelo painel.
+- O **painel** lista todos os aparelhos, mostra **quem está com cada um** e o **histórico de
+  localização no mapa**.
+- O app **se atualiza sozinho**: uma nova versão publicada no GitHub chega nos aparelhos no
+  ciclo seguinte, com 1 toque.
+
+### O que ele NÃO faz
+
+- **Não bloqueia, não trava e não apaga (wipe)** o aparelho — é só rastreamento de localização.
+- **Não captura IMEI automaticamente** no Android 10+ (o sistema não permite a apps comuns);
+  por isso o IMEI, quando usado, é **digitado** pelo colaborador no cadastro.
+- Não é rastreamento em tempo real: a posição é **diária** (o intervalo é configurável).
+
+### Stack
+
+- **App Android** — Kotlin nativo, `minSdk 21` (Android 5+), WorkManager para o envio diário,
+  FusedLocationProvider (com fallback), auto-update via APK assinado.
+- **Backend** — FastAPI + asyncpg + **Postgres (Neon)**, migrations versionadas, hospedado no Render.
+- **Painel** — React + Vite + Leaflet (mapa), hospedado separado (Render Static / Vercel).
+- **CI/CD** — GitHub Actions: push no `backend/` roda migrations e redeploya; tag `vX` compila,
+  assina e publica o APK.
 
 ```
 mdm-setup/
 ├── backend/            API FastAPI + migrations (Postgres/Neon)
 ├── android/            App Android (Kotlin) com auto-update
-├── frontend/           Painel web (React/Vite) - consulta e histórico
+├── frontend/           Painel web (React/Vite) - consulta, histórico e reset de cadastro
 └── .github/workflows/  backend.yml + android.yml
 ```
 

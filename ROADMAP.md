@@ -33,11 +33,19 @@ Entregue numa leva só: 1 versão do app (`versionCode 3` / `1.2.0`) + 1 migrati
 
 ---
 
+## ➕ Extras pós-Fase 1 (entregues)
+
+| Item | Onde | Status |
+|---|---|---|
+| **Reset de cadastro** — `DELETE /api/v1/dispositivos/{android_id}/cadastro` (protegido por `X-Admin-Key`). Destrava o device: limpa colaborador/patrimônio/IMEI/`cadastrado_em`; o app volta a mostrar o formulário no próximo abrir. Não apaga posições. Sem migration. | 🗄️ | ✅ |
+
+> Decisão: **não guardar histórico de proprietários** — só interessa quem está com o aparelho agora. O item 12 abaixo fica só como "troca" via reset + novo cadastro (sem tabela de histórico).
+
 ## 🔜 Fase 2 — Features médias (a debater)
 
 | # | Item | Esforço | Onde |
 |---|---|---|---|
-| 12 | **Troca de proprietário**: patrimônio/IMEI já usado → "já está com fulano, substituir?" → confirma responsabilidade → transfere + grava histórico (tabela `device_owner_history`) | 🟡 | 📱🗄️ |
+| 12 | **Troca de proprietário**: hoje resolvida via reset (T.I.) + novo cadastro. Melhoria futura opcional: fluxo no próprio app ("já está com fulano, substituir?") — sem histórico | 🟡 | 📱🗄️ |
 | 13 | **Saber se excluiu o app** → heurística no painel: aparelho sem enviar há X dias = "possivelmente removido/desligado" | 🔴 | 🗄️📊 |
 | 14 | **Aparelhos coletivos** (1 p/ equipe): perguntar se é coletivo → lista de equipes | 🟡 | 📱🗄️ |
 

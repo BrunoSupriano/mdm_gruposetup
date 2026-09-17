@@ -30,7 +30,7 @@ android {
         applicationId = "br.com.gruposetup.mdm"
         minSdk = 21
         targetSdk = 34
-        versionCode = 6
+        versionCode = 7
         versionName = "1.5.0"
 
         // Injetados no build (CI secret ou -P / keystore.properties). NAO ficam no repo.

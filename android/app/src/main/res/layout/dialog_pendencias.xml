@@ -17,8 +17,14 @@
         android:textColor="@color/textMuted" android:textSize="13sp"
         android:paddingTop="4dp" android:paddingBottom="16dp"/>
 
-    <LinearLayout
-        android:id="@+id/listaPendencias"
+    <ScrollView
+        android:id="@+id/scrollPend"
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical"/>
+        android:scrollbars="vertical" android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:id="@+id/listaPendencias"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
 </LinearLayout>

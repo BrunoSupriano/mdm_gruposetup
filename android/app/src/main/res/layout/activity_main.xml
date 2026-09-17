@@ -116,16 +116,81 @@
                     android:orientation="vertical" android:paddingTop="12dp">
 
                     <TextView
+                        android:id="@+id/txtReconfirmAviso"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:text="Seu nome ou matrícula" android:textColor="@color/textOnDark"
-                        android:textSize="14sp" android:paddingBottom="6dp"/>
-                    <AutoCompleteTextView
-                        android:id="@+id/autoColaborador"
-                        android:layout_width="match_parent" android:layout_height="52dp"
-                        android:hint="Digite para buscar..." android:textColorHint="@color/textMuted"
-                        android:textColor="@color/textOnDark" android:textSize="15sp"
-                        android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
-                        android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
+                        android:text="Confirmação mensal: confirme quem está com este aparelho para manter o cadastro em dia."
+                        android:textColor="@color/redSoft" android:textSize="13sp"
+                        android:background="@drawable/glass_red" android:padding="12dp"
+                        android:layout_marginBottom="12dp" android:visibility="gone"/>
+
+                    <!-- Pergunta inicial: individual ou equipe -->
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Este aparelho é de uso individual ou de equipe?"
+                        android:textColor="@color/textOnDark"
+                        android:textSize="14sp" android:paddingBottom="8dp"/>
+                    <LinearLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTipoIndividual"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginEnd="6dp"
+                            android:text="Individual" android:textColor="@color/textOnDark"
+                            android:textAllCaps="false"
+                            android:insetTop="0dp" android:insetBottom="0dp"
+                            app:backgroundTint="@color/glassFill"
+                            app:strokeColor="@color/glassStroke" app:strokeWidth="1dp"
+                            app:cornerRadius="12dp"/>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTipoEquipe"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginStart="6dp"
+                            android:text="Equipe" android:textColor="@color/textOnDark"
+                            android:textAllCaps="false"
+                            android:insetTop="0dp" android:insetBottom="0dp"
+                            app:backgroundTint="@color/glassFill"
+                            app:strokeColor="@color/glassStroke" app:strokeWidth="1dp"
+                            app:cornerRadius="12dp"/>
+                    </LinearLayout>
+
+                    <!-- Individual: colaborador -->
+                    <LinearLayout
+                        android:id="@+id/boxIndividual"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical" android:visibility="gone">
+                        <TextView
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:text="Seu nome ou matrícula" android:textColor="@color/textOnDark"
+                            android:textSize="14sp" android:paddingTop="16dp" android:paddingBottom="6dp"/>
+                        <AutoCompleteTextView
+                            android:id="@+id/autoColaborador"
+                            android:layout_width="match_parent" android:layout_height="52dp"
+                            android:hint="Digite para buscar..." android:textColorHint="@color/textMuted"
+                            android:textColor="@color/textOnDark" android:textSize="15sp"
+                            android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                            android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
+                    </LinearLayout>
+
+                    <!-- Equipe: eqps_ativas -->
+                    <LinearLayout
+                        android:id="@+id/boxEquipe"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical" android:visibility="gone">
+                        <TextView
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:text="Equipe" android:textColor="@color/textOnDark"
+                            android:textSize="14sp" android:paddingTop="16dp" android:paddingBottom="6dp"/>
+                        <AutoCompleteTextView
+                            android:id="@+id/autoEquipe"
+                            android:layout_width="match_parent" android:layout_height="52dp"
+                            android:hint="Digite a equipe ou processo..." android:textColorHint="@color/textMuted"
+                            android:textColor="@color/textOnDark" android:textSize="15sp"
+                            android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                            android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
+                    </LinearLayout>
 
                     <!-- Pergunta: tem patrimônio? -->
                     <TextView

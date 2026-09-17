@@ -5,6 +5,12 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Só aplica o plugin do Firebase se o google-services.json estiver presente.
+// Assim o app continua compilando antes de você configurar o Firebase.
+if (project.file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Carrega keystore.properties (local, NAO versionado) se existir
 val keystorePropsFile = rootProject.file("keystore.properties")
 val keystoreProps = Properties().apply {
@@ -24,8 +30,8 @@ android {
         applicationId = "br.com.gruposetup.mdm"
         minSdk = 21
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.2.1"
+        versionCode = 6
+        versionName = "1.3.0"
 
         // Injetados no build (CI secret ou -P / keystore.properties). NAO ficam no repo.
         val apiBase = secret("API_BASE_URL", "https://mdm-gruposetup-backend.onrender.com")
@@ -77,4 +83,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 }

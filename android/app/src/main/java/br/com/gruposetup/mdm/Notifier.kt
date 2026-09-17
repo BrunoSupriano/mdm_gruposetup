@@ -43,6 +43,50 @@ object Notifier {
         } catch (e: SecurityException) { /* sem permissao de notificacao */ }
     }
 
+    fun avisarRecado(context: Context, texto: String) {
+        ensureChannel(context)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        else PendingIntent.FLAG_UPDATE_CURRENT
+        val pi = PendingIntent.getActivity(context, 3, intent, flags)
+        val n = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Setup MDM — T.I.")
+            .setContentText(if (texto.isBlank()) "Você recebeu um aviso da T.I." else texto)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(texto))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pi)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIF_ID + 3, n)
+        } catch (e: SecurityException) { }
+    }
+
+    fun avisarReconfirmar(context: Context) {
+        ensureChannel(context)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        else PendingIntent.FLAG_UPDATE_CURRENT
+        val pi = PendingIntent.getActivity(context, 2, intent, flags)
+        val n = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setContentTitle("Setup MDM — confirmação mensal")
+            .setContentText("Confirme quem está com este aparelho. Toque para atualizar o cadastro.")
+            .setAutoCancel(true)
+            .setContentIntent(pi)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIF_ID + 2, n)
+        } catch (e: SecurityException) { }
+    }
+
     fun avisarAtualizacao(context: Context, versionName: String) {
         ensureChannel(context)
         val intent = Intent(context, MainActivity::class.java).apply {

@@ -53,7 +53,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtEnvioStatus: TextView
     private lateinit var btnEnviarAgora: Button
     private lateinit var formCadastro: LinearLayout
+    private lateinit var btnTipoIndividual: MaterialButton
+    private lateinit var btnTipoEquipe: MaterialButton
+    private lateinit var boxIndividual: LinearLayout
+    private lateinit var boxEquipe: LinearLayout
     private lateinit var autoColaborador: AutoCompleteTextView
+    private lateinit var autoEquipe: AutoCompleteTextView
     private lateinit var btnTemPatSim: MaterialButton
     private lateinit var btnTemPatNao: MaterialButton
     private lateinit var boxPatrimonio: LinearLayout
@@ -67,14 +72,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtColabNome: TextView
     private lateinit var txtColabCargo: TextView
     private lateinit var txtDoc: TextView
+    private lateinit var txtReconfirmAviso: TextView
 
     private var colabSelecionado: ColabItem? = null
+    private var equipeSelecionada: EquipeItem? = null
+    // null = ainda não escolheu; "individual" | "equipe"
+    private var tipoUso: String? = null
     // null = ainda não respondeu; true = tem patrimônio; false = usar IMEI
     private var temPatrimonio: Boolean? = null
     private var cadastrado = false
+    // true = o formulário está em modo "reconfirmação mensal" (sobrescreve o cadastro)
+    private var modoReconfirmar = false
 
     private var dialogPend: AlertDialog? = null
     private var containerPend: LinearLayout? = null
+    private var scrollPend: android.widget.ScrollView? = null
     private var dialogConfig: AlertDialog? = null
     private var atualizacaoInfo: UpdateChecker.Info? = null
 
@@ -104,7 +116,12 @@ class MainActivity : AppCompatActivity() {
         txtEnvioStatus = findViewById(R.id.txtEnvioStatus)
         btnEnviarAgora = findViewById(R.id.btnEnviarAgora)
         formCadastro = findViewById(R.id.formCadastro)
+        btnTipoIndividual = findViewById(R.id.btnTipoIndividual)
+        btnTipoEquipe = findViewById(R.id.btnTipoEquipe)
+        boxIndividual = findViewById(R.id.boxIndividual)
+        boxEquipe = findViewById(R.id.boxEquipe)
         autoColaborador = findViewById(R.id.autoColaborador)
+        autoEquipe = findViewById(R.id.autoEquipe)
         btnTemPatSim = findViewById(R.id.btnTemPatSim)
         btnTemPatNao = findViewById(R.id.btnTemPatNao)
         boxPatrimonio = findViewById(R.id.boxPatrimonio)
@@ -118,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         txtColabNome = findViewById(R.id.txtColabNome)
         txtColabCargo = findViewById(R.id.txtColabCargo)
         txtDoc = findViewById(R.id.txtDoc)
+        txtReconfirmAviso = findViewById(R.id.txtReconfirmAviso)
 
         autoColaborador.setAdapter(ColaboradorAdapter(this))
         autoColaborador.setOnItemClickListener { parent, _, position, _ ->
@@ -127,6 +145,16 @@ class MainActivity : AppCompatActivity() {
             val sel = colabSelecionado
             if (sel != null && it?.toString() != sel.nome) colabSelecionado = null
         }
+        autoEquipe.setAdapter(EquipeAdapter(this))
+        autoEquipe.setOnItemClickListener { parent, _, position, _ ->
+            equipeSelecionada = parent.getItemAtPosition(position) as? EquipeItem
+        }
+        autoEquipe.doAfterTextChanged {
+            val sel = equipeSelecionada
+            if (sel != null && it?.toString() != sel.descricao) equipeSelecionada = null
+        }
+        btnTipoIndividual.setOnClickListener { escolherTipo("individual") }
+        btnTipoEquipe.setOnClickListener { escolherTipo("equipe") }
 
         btnTemPatSim.setOnClickListener { escolherPatrimonio(true) }
         btnTemPatNao.setOnClickListener { escolherPatrimonio(false) }
@@ -139,16 +167,43 @@ class MainActivity : AppCompatActivity() {
         btnAtualizarMain.setOnClickListener { baixarAtualizacao(btnAtualizarMain) }
 
         Scheduler.agendarDiario(this)
+        Scheduler.agendarReconfirmacao(this)
+        registrarPush()
         mostrarUltima()
+        mostrarEstadoLocal()   // pinta o cadastro do cache na hora, sem esperar a rede
+    }
+
+    /** Pega o token FCM e registra no backend. Silencioso se o Firebase ainda não
+     *  estiver configurado (sem google-services.json). */
+    private fun registrarPush() {
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token -> FcmService.registrarToken(this, token) }
+        } catch (e: Exception) { /* Firebase não configurado ainda */ }
     }
 
     override fun onResume() {
         super.onResume()
+        mostrarEstadoLocal()
         if (!verificarConexao()) return
         sincronizar()
         verificarAtualizacao()
         mostrarUltima()
-        if (!cadastrado) carregarCadastro()
+        carregarCadastro()
+    }
+
+    /** Mostra o estado do cadastro a partir do cache local (instantâneo). */
+    private fun mostrarEstadoLocal() {
+        // vencimento da janela também dispara o modo reconfirmar na hora de abrir
+        if (Prefs.reconfirmacaoVencida(this)) Prefs.setPrecisaReconfirmar(this, true)
+
+        if (Prefs.cadastrado(this) && !Prefs.precisaReconfirmar(this)) {
+            mostrarTravado(Prefs.cadNome(this), Prefs.cadCargo(this), Prefs.cadDoc(this))
+        } else if (Prefs.cadastrado(this) && Prefs.precisaReconfirmar(this)) {
+            mostrarFormReconfirmar()
+        } else {
+            mostrarFormInicial()
+        }
     }
 
     override fun onDestroy() {
@@ -166,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             offlineOverlay.tag = null
             // reconectou: reprocessa a tela
             sincronizar(); verificarAtualizacao(); mostrarUltima()
-            if (!cadastrado) carregarCadastro()
+            carregarCadastro()
         } else if (!online) {
             offlineOverlay.tag = "estava_offline"
         }
@@ -221,6 +276,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ---------------- cadastro ----------------
+    private fun escolherTipo(tipo: String) {
+        tipoUso = tipo
+        txtCadastroErro.visibility = View.GONE
+        val ind = tipo == "individual"
+        boxIndividual.visibility = if (ind) View.VISIBLE else View.GONE
+        boxEquipe.visibility = if (ind) View.GONE else View.VISIBLE
+        if (ind) { equipeSelecionada = null; autoEquipe.setText("") }
+        else { colabSelecionado = null; autoColaborador.setText("") }
+        estilizarToggle(btnTipoIndividual, ind)
+        estilizarToggle(btnTipoEquipe, !ind)
+    }
+
+    private fun resetarSelecaoTipo() {
+        tipoUso = null
+        colabSelecionado = null; equipeSelecionada = null
+        temPatrimonio = null
+        boxIndividual.visibility = View.GONE
+        boxEquipe.visibility = View.GONE
+        boxPatrimonio.visibility = View.GONE
+        boxImei.visibility = View.GONE
+        autoColaborador.setText(""); autoEquipe.setText("")
+        edtPatrimonio.text?.clear(); edtImei.text?.clear()
+        estilizarToggle(btnTipoIndividual, false)
+        estilizarToggle(btnTipoEquipe, false)
+        estilizarToggle(btnTemPatSim, false)
+        estilizarToggle(btnTemPatNao, false)
+        txtCadastroErro.visibility = View.GONE
+    }
+
     private fun escolherPatrimonio(sim: Boolean) {
         temPatrimonio = sim
         txtCadastroErro.visibility = View.GONE
@@ -251,25 +335,62 @@ class MainActivity : AppCompatActivity() {
     private fun carregarCadastro() {
         lifecycleScope.launch {
             val cad = withContext(Dispatchers.IO) { ApiClient.getCadastro(androidId) }
-            if (cad != null && cad.optBoolean("cadastrado", false)) {
-                val nome = cad.optString("colaborador_nome", "")
-                val cargo = cad.optString("colaborador_cargo", "")
-                val patr = cad.optString("patrimonio", "")
-                val imei = cad.optString("imei", "")
-                val doc = if (patr.isNotEmpty() && patr != "null") "Patrimônio: $patr"
-                          else if (imei.isNotEmpty() && imei != "null") "IMEI: $imei" else ""
-                mostrarTravado(nome, cargo, doc)
+            when {
+                cad == null -> { /* offline/erro: mantém o cache local, não faz nada */ }
+                cad.optBoolean("cadastrado", false) -> {
+                    val equipe = cad.optString("tipo_uso", "individual") == "equipe"
+                    val nome = if (equipe) cad.optString("equipe_descricao", "") else cad.optString("colaborador_nome", "")
+                    val cargo = if (equipe) "Equipe · " + cad.optString("equipe_processo", "") else cad.optString("colaborador_cargo", "")
+                    val patr = cad.optString("patrimonio", "")
+                    val imei = cad.optString("imei", "")
+                    val doc = if (patr.isNotEmpty() && patr != "null") "Patrimônio: $patr"
+                              else if (imei.isNotEmpty() && imei != "null") "IMEI: $imei" else ""
+                    Prefs.marcarDoServidor(this@MainActivity, nome, cargo, doc)
+                    // respeita a reconfirmação mensal: se vencida, mantém o form
+                    if (Prefs.reconfirmacaoVencida(this@MainActivity)) Prefs.setPrecisaReconfirmar(this@MainActivity, true)
+                    if (Prefs.precisaReconfirmar(this@MainActivity)) mostrarFormReconfirmar()
+                    else mostrarTravado(nome, cargo, doc)
+                }
+                else -> {
+                    // servidor diz que NÃO está cadastrado (ex.: T.I. resetou) -> reabre o form
+                    Prefs.limparCadastro(this@MainActivity)
+                    mostrarFormInicial()
+                }
             }
         }
     }
 
     private fun mostrarTravado(nome: String, cargo: String, doc: String) {
         cadastrado = true
+        modoReconfirmar = false
         formCadastro.visibility = View.GONE
         cadastroTravado.visibility = View.VISIBLE
+        txtReconfirmAviso.visibility = View.GONE
         txtColabNome.text = nome
         txtColabCargo.text = cargo
         txtDoc.text = doc
+    }
+
+    private fun mostrarFormInicial() {
+        if (formCadastro.visibility == View.VISIBLE && !modoReconfirmar && !cadastrado) return
+        cadastrado = false
+        modoReconfirmar = false
+        cadastroTravado.visibility = View.GONE
+        formCadastro.visibility = View.VISIBLE
+        txtReconfirmAviso.visibility = View.GONE
+        btnSalvarCadastro.text = "Salvar cadastro"
+        resetarSelecaoTipo()
+    }
+
+    private fun mostrarFormReconfirmar() {
+        if (formCadastro.visibility == View.VISIBLE && modoReconfirmar) return
+        cadastrado = true
+        modoReconfirmar = true
+        cadastroTravado.visibility = View.GONE
+        formCadastro.visibility = View.VISIBLE
+        txtReconfirmAviso.visibility = View.VISIBLE
+        btnSalvarCadastro.text = "Confirmar cadastro"
+        resetarSelecaoTipo()
     }
 
     private fun erroCadastro(msg: String) {
@@ -279,10 +400,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun salvarCadastro() {
         txtCadastroErro.visibility = View.GONE
-        val colab = colabSelecionado
-        if (colab == null || autoColaborador.text.toString() != colab.nome) {
-            erroCadastro("Escolha seu nome na lista de sugestões."); return
+        val tipo = tipoUso
+        if (tipo == null) { erroCadastro("Escolha se é uso individual ou de equipe."); return }
+
+        // resolve o "dono": colaborador (individual) ou equipe
+        var colabId: Long? = null
+        var equipeId: Long? = null
+        var nomeExibicao = ""
+        var cargoExibicao = ""
+        if (tipo == "individual") {
+            val colab = colabSelecionado
+            if (colab == null || autoColaborador.text.toString() != colab.nome) {
+                erroCadastro("Escolha seu nome na lista de sugestões."); return
+            }
+            colabId = colab.id; nomeExibicao = colab.nome; cargoExibicao = colab.cargo
+        } else {
+            val eq = equipeSelecionada
+            if (eq == null || autoEquipe.text.toString() != eq.descricao) {
+                erroCadastro("Escolha a equipe na lista de sugestões."); return
+            }
+            equipeId = eq.id; nomeExibicao = eq.descricao; cargoExibicao = eq.processo
         }
+
         val tem = temPatrimonio
         if (tem == null) { erroCadastro("Responda se o aparelho tem patrimônio."); return }
         val patr = edtPatrimonio.text.toString().trim()
@@ -294,19 +433,26 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (imei.length < 14) { erroCadastro("Informe um IMEI válido (14-17 dígitos)."); return }
         }
-        btnSalvarCadastro.isEnabled = false; btnSalvarCadastro.text = "Salvando..."
+        val reconfirmando = modoReconfirmar
+        btnSalvarCadastro.isEnabled = false
+        btnSalvarCadastro.text = if (reconfirmando) "Confirmando..." else "Salvando..."
         lifecycleScope.launch {
             val (ok, msg) = withContext(Dispatchers.IO) {
-                ApiClient.salvarCadastro(androidId, colab.id, if (tem) patr else null, if (tem) null else imei)
+                val p = if (tem) patr else null
+                val i = if (tem) null else imei
+                if (reconfirmando) ApiClient.reconfirmarCadastro(androidId, tipo, colabId, equipeId, p, i)
+                else ApiClient.salvarCadastro(androidId, tipo, colabId, equipeId, p, i)
             }
             if (ok) {
                 val doc = if (tem) "Patrimônio: $patr" else "IMEI: $imei"
-                mostrarTravado(colab.nome, colab.cargo, doc)
-                Toast.makeText(this@MainActivity, "Cadastro salvo!", Toast.LENGTH_SHORT).show()
-                // Dispara a primeira localização imediatamente após o cadastro
+                Prefs.registrarConfirmacao(this@MainActivity, nomeExibicao, cargoExibicao, doc)
+                mostrarTravado(nomeExibicao, cargoExibicao, doc)
+                Toast.makeText(this@MainActivity, if (reconfirmando) "Cadastro confirmado!" else "Cadastro salvo!", Toast.LENGTH_SHORT).show()
+                // Dispara a localização imediatamente após o cadastro/confirmação
                 enviarLocalizacao("manual")
             } else {
-                btnSalvarCadastro.isEnabled = true; btnSalvarCadastro.text = "Salvar cadastro"
+                btnSalvarCadastro.isEnabled = true
+                btnSalvarCadastro.text = if (reconfirmando) "Confirmar cadastro" else "Salvar cadastro"
                 erroCadastro(traduzErro(msg))
             }
         }
@@ -315,6 +461,7 @@ class MainActivity : AppCompatActivity() {
     private fun traduzErro(msg: String): String = when {
         msg.contains("ja cadastrado") -> "Este aparelho já está cadastrado."
         msg.contains("patrimonio OU imei") -> "Informe patrimônio OU IMEI."
+        msg.contains("equipe") -> "Equipe não encontrada. Escolha uma da lista."
         msg.contains("colaborador") -> "Colaborador não encontrado."
         msg.contains("patrimonio") -> "Patrimônio inválido (só números, até 7 dígitos)."
         msg.contains("conexao") -> "Sem conexão. Tente de novo."
@@ -451,6 +598,7 @@ class MainActivity : AppCompatActivity() {
         if (dialogPend == null) {
             val view = LayoutInflater.from(this).inflate(R.layout.dialog_pendencias, null)
             containerPend = view.findViewById(R.id.listaPendencias)
+            scrollPend = view.findViewById(R.id.scrollPend)
             dialogPend = AlertDialog.Builder(this, R.style.Theme_SetupMDM_Dialog)
                 .setView(view).setCancelable(false).create()
         }
@@ -465,6 +613,22 @@ class MainActivity : AppCompatActivity() {
         if (dialogPend?.isShowing != true) {
             aplicarBlur(true)
             dialogPend?.show()
+        }
+        caparAlturaScroll()
+    }
+
+    /** Limita a lista de pendências a ~50% da tela para não estourar o diálogo
+     *  (o resto rola). Sem isso, com 3+ itens as linhas de baixo eram cortadas. */
+    private fun caparAlturaScroll() {
+        val sv = scrollPend ?: return
+        sv.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        sv.requestLayout()
+        sv.post {
+            val max = (resources.displayMetrics.heightPixels * 0.5).toInt()
+            if (sv.height > max) {
+                sv.layoutParams.height = max
+                sv.requestLayout()
+            }
         }
     }
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "82975294276",
+    "project_id": "setup-mdm",
+    "storage_bucket": "setup-mdm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82975294276:android:5902f9673a038f3d748d11",
+        "android_client_info": {
+          "package_name": "br.com.gruposetup.mdm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9ONiFUvU4OvsKlDOkAuwM5ygVmhJ95fA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -16,6 +16,10 @@ data class ColabItem(val id: Long, val nome: String, val cargo: String) {
     override fun toString(): String = nome
 }
 
+data class EquipeItem(val id: Long, val descricao: String, val processo: String) {
+    override fun toString(): String = descricao
+}
+
 object ApiClient {
 
     private val JSON = "application/json; charset=utf-8".toMediaType()
@@ -68,6 +72,22 @@ object ApiClient {
         }
     } catch (e: Exception) { emptyList() }
 
+    /** Busca equipes (chamar fora da main thread). */
+    fun buscarEquipes(q: String): List<EquipeItem> = try {
+        val url = base() + "/api/v1/equipes?q=" + URLEncoder.encode(q, "UTF-8")
+        val req = Request.Builder().url(url).addHeader("Authorization", bearer()).get().build()
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) emptyList()
+            else {
+                val arr = JSONArray(resp.body?.string() ?: "[]")
+                (0 until arr.length()).map {
+                    val o = arr.getJSONObject(it)
+                    EquipeItem(o.getLong("id"), o.optString("descricao"), o.optString("processo"))
+                }
+            }
+        }
+    } catch (e: Exception) { emptyList() }
+
     /** Cadastro atual do device (ou null em erro). Tem campo "cadastrado". */
     fun getCadastro(androidId: String): JSONObject? = try {
         val url = base() + "/api/v1/dispositivos/" + URLEncoder.encode(androidId, "UTF-8") + "/cadastro"
@@ -77,14 +97,32 @@ object ApiClient {
         }
     } catch (e: Exception) { null }
 
-    /** Salva cadastro. Retorna (ok, mensagem). */
-    fun salvarCadastro(androidId: String, colaboradorId: Long, patrimonio: String?, imei: String?): Pair<Boolean, String> {
+    /** Salva cadastro (primeira vez). tipoUso = "individual" | "equipe". */
+    fun salvarCadastro(androidId: String, tipoUso: String, colaboradorId: Long?, equipeId: Long?, patrimonio: String?, imei: String?): Pair<Boolean, String> =
+        postCadastro("/cadastro", androidId, tipoUso, colaboradorId, equipeId, patrimonio, imei)
+
+    /** Reconfirma o cadastro (mensal): sobrescreve o atual. */
+    fun reconfirmarCadastro(androidId: String, tipoUso: String, colaboradorId: Long?, equipeId: Long?, patrimonio: String?, imei: String?): Pair<Boolean, String> =
+        postCadastro("/cadastro/reconfirmar", androidId, tipoUso, colaboradorId, equipeId, patrimonio, imei)
+
+    /** Registra o token FCM do aparelho no backend. (roda fora da main thread) */
+    fun registrarFcmToken(androidId: String, token: String): Boolean = try {
+        val json = JSONObject().put("token", token)
+        val url = base() + "/api/v1/dispositivos/" + URLEncoder.encode(androidId, "UTF-8") + "/fcm-token"
+        val req = Request.Builder().url(url).addHeader("Authorization", bearer())
+            .post(json.toString().toRequestBody(JSON)).build()
+        client.newCall(req).execute().use { it.isSuccessful }
+    } catch (e: Exception) { false }
+
+    private fun postCadastro(sufixo: String, androidId: String, tipoUso: String, colaboradorId: Long?, equipeId: Long?, patrimonio: String?, imei: String?): Pair<Boolean, String> {
         return try {
             val json = JSONObject()
-            json.put("colaborador_id", colaboradorId)
+            json.put("tipo_uso", tipoUso)
+            if (colaboradorId != null) json.put("colaborador_id", colaboradorId)
+            if (equipeId != null) json.put("equipe_id", equipeId)
             if (!patrimonio.isNullOrBlank()) json.put("patrimonio", patrimonio)
             if (!imei.isNullOrBlank()) json.put("imei", imei)
-            val url = base() + "/api/v1/dispositivos/" + URLEncoder.encode(androidId, "UTF-8") + "/cadastro"
+            val url = base() + "/api/v1/dispositivos/" + URLEncoder.encode(androidId, "UTF-8") + sufixo
             val req = Request.Builder().url(url).addHeader("Authorization", bearer())
                 .post(json.toString().toRequestBody(JSON)).build()
             client.newCall(req).execute().use { resp ->

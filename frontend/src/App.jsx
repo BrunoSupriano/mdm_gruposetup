@@ -55,9 +55,11 @@ function Dispositivos({ onAbrir }) {
               <td><b>{d.fabricante || ''} {d.modelo || d.android_id}</b><br/>
                   <span className="muted">{d.android_id}</span></td>
               <td>
-                {d.colaborador_nome
-                  ? <><b>{d.colaborador_nome}</b>{d.colaborador_cargo && <><br/><span className="muted">{d.colaborador_cargo}</span></>}</>
-                  : <span className="muted">não cadastrado</span>}
+                {d.tipo_uso === 'equipe' && d.equipe_descricao
+                  ? <><b>{d.equipe_descricao}</b><br/><span className="muted">Equipe{d.equipe_processo ? ' · ' + d.equipe_processo : ''}</span></>
+                  : d.colaborador_nome
+                    ? <><b>{d.colaborador_nome}</b>{d.colaborador_cargo && <><br/><span className="muted">{d.colaborador_cargo}</span></>}</>
+                    : <span className="muted">não cadastrado</span>}
               </td>
               <td>{d.patrimonio || <span className="muted">—</span>}</td>
               <td>{d.bateria_pct != null ? d.bateria_pct + '%' : '—'}</td>
@@ -92,6 +94,10 @@ function Historico({ device, onVoltar }) {
     api.historico(device.android_id).then(setPts).catch(() => setErro('Falha ao carregar histórico'))
   }, [device])
 
+  const [cmdMsg, setCmdMsg] = useState('')
+  const [cmdOk, setCmdOk] = useState(false)
+  const [cmdBusy, setCmdBusy] = useState('')
+
   async function resetar() {
     setResetando(true); setResetMsg('')
     try {
@@ -102,6 +108,26 @@ function Historico({ device, onVoltar }) {
       setResetMsg('Falha ao limpar o cadastro. Tente novamente.')
     } finally {
       setResetando(false)
+    }
+  }
+
+  async function comando(tipo) {
+    setCmdBusy(tipo); setCmdMsg(''); setCmdOk(false)
+    try {
+      await api.enviarComando(device.android_id, tipo, '')
+      setCmdOk(true)
+      setCmdMsg(tipo === 'localizacao'
+        ? 'Pedido enviado. A localização deve chegar em instantes — recarregue o histórico.'
+        : 'Pedido de reconfirmação enviado ao aparelho.')
+    } catch (e) {
+      const s = e.status
+      setCmdMsg(
+        s === 503 ? 'Push (FCM) ainda não está configurado no servidor.'
+        : s === 409 ? 'Este aparelho ainda não registrou o push (precisa abrir o app uma vez com a nova versão).'
+        : s === 404 ? 'Aparelho não encontrado.'
+        : 'Falha ao enviar o comando.')
+    } finally {
+      setCmdBusy('')
     }
   }
 
@@ -119,14 +145,18 @@ function Historico({ device, onVoltar }) {
       <div className="card">
         <div className="row-between">
           <div>
-            <div className="label">Responsável atual</div>
-            {device.colaborador_nome
-              ? <div><b>{device.colaborador_nome}</b>{device.colaborador_cargo ? ' · ' + device.colaborador_cargo : ''}
+            <div className="label">{device.tipo_uso === 'equipe' ? 'Equipe responsável' : 'Responsável atual'}</div>
+            {device.tipo_uso === 'equipe' && device.equipe_descricao
+              ? <div><b>{device.equipe_descricao}</b>{device.equipe_processo ? ' · ' + device.equipe_processo : ''}
                   {device.patrimonio ? <span className="muted"> · Patrimônio {device.patrimonio}</span>
                     : device.imei ? <span className="muted"> · IMEI {device.imei}</span> : null}</div>
-              : device.patrimonio
-                ? <div><span className="muted">Patrimônio {device.patrimonio}</span></div>
-                : <div className="muted">Sem nome do responsável (atualize o backend para exibir)</div>}
+              : device.colaborador_nome
+                ? <div><b>{device.colaborador_nome}</b>{device.colaborador_cargo ? ' · ' + device.colaborador_cargo : ''}
+                    {device.patrimonio ? <span className="muted"> · Patrimônio {device.patrimonio}</span>
+                      : device.imei ? <span className="muted"> · IMEI {device.imei}</span> : null}</div>
+                : device.patrimonio
+                  ? <div><span className="muted">Patrimônio {device.patrimonio}</span></div>
+                  : <div className="muted">Sem nome do responsável (atualize o backend para exibir)</div>}
           </div>
           {!jaResetado && (
             confirmando
@@ -141,6 +171,18 @@ function Historico({ device, onVoltar }) {
           )}
         </div>
         {resetMsg && <div className={jaResetado ? 'ok-msg' : 'err'}>{resetMsg}</div>}
+
+        <div className="cmd-row">
+          <button className="primary-outline" disabled={!!cmdBusy}
+                  onClick={() => comando('localizacao')}>
+            {cmdBusy === 'localizacao' ? 'Enviando...' : '📍 Solicitar localização agora'}
+          </button>
+          <button className="ghost-btn" disabled={!!cmdBusy}
+                  onClick={() => comando('reconfirmar')}>
+            {cmdBusy === 'reconfirmar' ? 'Enviando...' : 'Pedir reconfirmação'}
+          </button>
+        </div>
+        {cmdMsg && <div className={cmdOk ? 'ok-msg' : 'err'}>{cmdMsg}</div>}
       </div>
 
       {pts.length > 0 && (

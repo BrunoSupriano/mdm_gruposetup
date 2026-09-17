@@ -33,3 +33,19 @@ export const historico = (id, limite = 300) =>
 // Destrava o cadastro do aparelho (usa a sessão do painel; o backend também aceita X-Admin-Key)
 export const resetarCadastro = (id) =>
   req('/api/v1/dispositivos/' + encodeURIComponent(id) + '/cadastro', { method: 'DELETE' })
+
+// Envia um comando push (FCM) para o aparelho. tipo: localizacao | reconfirmar | atualizar | recado
+export async function enviarComando(id, tipo, texto) {
+  const r = await fetch(BASE + '/api/v1/dispositivos/' + encodeURIComponent(id) + '/comando', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ tipo, texto }),
+  })
+  if (r.status === 401) { logout(); throw new Error('sessao expirada') }
+  if (r.ok) return r.json()
+  let detail = ''
+  try { detail = (await r.json()).detail || '' } catch { /* ignore */ }
+  const err = new Error(detail || ('erro ' + r.status))
+  err.status = r.status
+  throw err
+}

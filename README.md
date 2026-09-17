@@ -10,10 +10,18 @@ de dados central. A T.I. acompanha tudo por um painel web — útil principalmen
 
 - O app roda em segundo plano e manda **uma posição por dia** (mais o modelo, fabricante,
   versão do Android, bateria e operadora). Também dá pra forçar um envio na hora pelo próprio app.
-- No **primeiro uso**, o colaborador se cadastra no app (nome/matrícula + patrimônio **ou** IMEI).
-  Depois disso o cadastro trava; só a T.I. destrava (reset) pelo painel.
-- O **painel** lista todos os aparelhos, mostra **quem está com cada um** e o **histórico de
-  localização no mapa**.
+  Cada posição guarda a **origem** (`agendado` = ciclo diário · `manual` = botão/cadastro · `painel` = comando remoto).
+- **Cadastro em etapas** no primeiro uso, preenchido pelo próprio colaborador:
+  1. **Individual ou equipe?** — individual busca o colaborador em `mdm.colab_ativos`;
+     equipe busca em `eqps_ativas` (autocomplete, tem que escolher uma da lista).
+  2. **Patrimônio ou IMEI** (um dos dois; o patrimônio tem até 7 dígitos).
+  Depois de salvar, o cadastro **trava**; só a T.I. destrava (reset) pelo painel.
+- **Reconfirmação mensal:** a cada 30 dias o app pede a confirmação de quem está com o aparelho
+  (notificação de hora em hora até confirmar). Serve para manter o "quem é quem" em dia e pegar
+  troca de mão. A T.I. também pode disparar essa reconfirmação na hora, pelo painel (push).
+- O **painel** lista todos os aparelhos, mostra **quem/qual equipe está com cada um**, o
+  **histórico de localização no mapa**, permite **resetar o cadastro** e **enviar comandos**
+  (localização agora / reconfirmar) via push.
 - O app **se atualiza sozinho**: uma nova versão publicada no GitHub chega nos aparelhos no
   ciclo seguinte, com 1 toque.
 
@@ -29,7 +37,9 @@ de dados central. A T.I. acompanha tudo por um painel web — útil principalmen
 - **App Android** — Kotlin nativo, `minSdk 21` (Android 5+), WorkManager para o envio diário,
   FusedLocationProvider (com fallback), auto-update via APK assinado.
 - **Backend** — FastAPI + asyncpg + **Postgres (Neon)**, migrations versionadas, hospedado no Render.
-- **Painel** — React + Vite + Leaflet (mapa), hospedado separado (Render Static / Vercel).
+- **Painel** — React + Vite + Leaflet (mapa), hospedado no Render Static Site.
+- **Push/comandos remotos** — Firebase Cloud Messaging (FCM): o painel dispara comandos
+  (`localizacao`, `reconfirmar`, `atualizar`, `recado`) que acordam o app na hora.
 - **CI/CD** — GitHub Actions: push no `backend/` roda migrations e redeploya; tag `vX` compila,
   assina e publica o APK.
 
@@ -79,7 +89,11 @@ O `KEYSTORE_BASE64` já está pronto no arquivo `keystore.base64.txt` que te ent
 
 ## 3. Render (API)
 
-- Serviço já existe. Em **Environment**, garanta: `DATABASE_URL`, `API_KEY` e agora também `ADMIN_KEY`.
+- Serviço já existe. Em **Environment**, garanta:
+  - `DATABASE_URL`, `API_KEY`, `ADMIN_KEY`
+  - `PAINEL_SENHA` — senha de login do painel
+  - `CORS_ORIGINS` — URL do painel (ou `*`)
+  - `FCM_SERVICE_ACCOUNT` — JSON da service account do Firebase (ver seção 6), para os comandos push
 - (Opcional) Settings → **Deploy Hook**: copie a URL e ponha no secret `RENDER_DEPLOY_HOOK` — aí cada push no backend redeploya sozinho. Se preferir, deixe o auto-deploy do Render ligado e não use o hook.
 
 ## 4. Rodar/testar local (Docker) — stack completa
@@ -126,6 +140,43 @@ Se perder, não dá mais para atualizar o app por cima (o Android exige a mesma 
 
 ## Painel web (frontend/)
 
-Painel React para o T.I. ver os aparelhos e o histórico no mapa. Login por senha de admin.
-Deploy separado (Render Static Site ou Vercel) — veja `frontend/README.md`. Em produção,
-defina no backend `PAINEL_SENHA` (senha do painel) e `CORS_ORIGINS` (URL do painel).
+Painel React para o T.I. ver os aparelhos, o histórico no mapa, resetar cadastro e enviar
+comandos push. Login por senha (`PAINEL_SENHA` no backend).
+
+**Deploy — Render Static Site:**
+
+- **Root Directory:** `frontend`
+- **Build Command:** `npm install && npm run build`
+- **Publish Directory:** `dist`
+- Redirects/Rewrites: `Source /*` → `Destination /index.html` → `Rewrite` (fallback SPA)
+- Cada push que toca `frontend/` redeploya sozinho.
+
+## 6. Firebase (comandos push / FCM) — só você faz no console
+
+Necessário para o painel disparar "localização agora", "reconfirmar" etc. Enquanto não
+configurar, o app funciona normal (o plugin do Firebase é aplicado só se o `google-services.json`
+existir) e os comandos push respondem `503 FCM não configurado`.
+
+1. **console.firebase.google.com** → criar projeto (grátis).
+2. **Adicionar app Android** → package name `br.com.gruposetup.mdm`.
+3. Baixar **`google-services.json`** → `android/app/google-services.json` (commit; repo privado).
+4. **Configurações do projeto → Contas de serviço → Gerar nova chave privada** → baixa um JSON.
+5. No **Render (backend) → Environment** → `FCM_SERVICE_ACCOUNT` = conteúdo inteiro desse JSON.
+6. Publique uma versão do app com o `google-services.json` e abra-o uma vez em cada aparelho
+   (registra o token de push). Depois disso os comandos do painel funcionam.
+
+## Endpoints principais
+
+| Método | Rota | Auth | Uso |
+|---|---|---|---|
+| POST | `/api/v1/posicoes` | API_KEY (device) | app envia posição (`origem`) |
+| GET | `/api/v1/colaboradores?q=` | device | autocomplete de colaborador |
+| GET | `/api/v1/equipes?q=` | device | autocomplete de equipe (`eqps_ativas`) |
+| GET/POST | `/api/v1/dispositivos/{id}/cadastro` | device | ler / salvar cadastro (individual ou equipe) |
+| POST | `/api/v1/dispositivos/{id}/cadastro/reconfirmar` | device | reconfirmação mensal (sobrescreve) |
+| DELETE | `/api/v1/dispositivos/{id}/cadastro` | painel/admin | reset do cadastro (T.I.) |
+| POST | `/api/v1/dispositivos/{id}/fcm-token` | device | app registra token de push |
+| POST | `/api/v1/dispositivos/{id}/comando` | painel/admin | dispara push (`localizacao`/`reconfirmar`/`atualizar`/`recado`) |
+| GET | `/api/v1/dispositivos` | painel | lista aparelhos (com responsável/equipe) |
+| GET | `/api/v1/dispositivos/{id}/posicoes` | painel | histórico |
+| GET/POST | `/api/v1/app/versao` · `/apk` · `/release` | device/admin | auto-update |

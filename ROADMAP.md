@@ -33,40 +33,45 @@ Entregue numa leva só: 1 versão do app (`versionCode 3` / `1.2.0`) + 1 migrati
 
 ---
 
-## ➕ Extras pós-Fase 1 (entregues)
+## ➕ Entregue depois da Fase 1 (v1.2.x → v1.3.0)
 
 | Item | Onde | Status |
 |---|---|---|
-| **Reset de cadastro** — `DELETE /api/v1/dispositivos/{android_id}/cadastro` (protegido por `X-Admin-Key`). Destrava o device: limpa colaborador/patrimônio/IMEI/`cadastrado_em`; o app volta a mostrar o formulário no próximo abrir. Não apaga posições. Sem migration. | 🗄️ | ✅ |
+| **Reset de cadastro** — `DELETE .../cadastro` (painel logado ou `X-Admin-Key`). Limpa colaborador/equipe/patrimônio/IMEI/`cadastrado_em`; o app reabre o form. Não apaga posições. | 🗄️📊 | ✅ |
+| **Responsável na lista/detalhe do painel** — a lista mostra quem (ou qual equipe) está com cada aparelho | 📊 | ✅ |
+| **Cadastro fica fixo no aparelho** (cache local) — abre já mostrando o cadastro, sem flash de "cadastrar de novo"; só reabre se a T.I. resetar | 📱 | ✅ |
+| **Reconfirmação mensal** — a cada 30 dias o app pede confirmação (notificação de hora em hora); `POST .../cadastro/reconfirmar` sobrescreve | 📱🗄️ | ✅ |
+| **Comandos remotos via FCM** — painel dispara push: `localizacao` (ver onde está agora), `reconfirmar`, `atualizar`, `recado`. Coluna `fcm_token` + `POST .../comando` + `POST .../fcm-token` | 📱🗄️📊 | ✅ |
+| **Uso de equipe** (era o item 14) — cadastro em 2 etapas: individual (`colab_ativos`) OU equipe (`eqps_ativas`, autocomplete). Snapshot da equipe em `devices`. | 📱🗄️📊 | ✅ |
+| **Cadastro em etapas** — pergunta 1 (individual/equipe) → responsável → pergunta 2 (patrimônio/IMEI), uma de cada vez | 📱 | ✅ |
+| **Polimento visual** — botão "Enviar" na paleta (verde), avisos em vermelho vivo (glass), banner de atualização visível + "Verificar atualizações", diálogo de pendências rolável | 📱 | ✅ |
 
-> Decisão: **não guardar histórico de proprietários** — só interessa quem está com o aparelho agora. O item 12 abaixo fica só como "troca" via reset + novo cadastro (sem tabela de histórico).
+> Decisão: **não guardar histórico de proprietários** — só interessa quem está com o aparelho agora. Troca de mão = reset (T.I.) **ou** a reconfirmação mensal (o próprio usuário registra o novo dono/equipe).
 
-## 🔜 Fase 2 — Features médias (a debater)
+## 🔜 Fase 2 — Em aberto
 
 | # | Item | Esforço | Onde |
 |---|---|---|---|
-| 12 | **Troca de proprietário**: hoje resolvida via reset (T.I.) + novo cadastro. Melhoria futura opcional: fluxo no próprio app ("já está com fulano, substituir?") — sem histórico | 🟡 | 📱🗄️ |
-| 13 | **Saber se excluiu o app** → heurística no painel: aparelho sem enviar há X dias = "possivelmente removido/desligado" | 🔴 | 🗄️📊 |
-| 14 | **Aparelhos coletivos** (1 p/ equipe): perguntar se é coletivo → lista de equipes | 🟡 | 📱🗄️ |
+| 12 | **Refresh visual do painel** — modernizar UI (React + CSS), botão voltar do navegador (react-router) e keep-warm p/ o login lento (cold start do Render free) | 🟡 | 📊 |
+| 13 | **Setup do Firebase** (seu lado) — criar projeto, `google-services.json`, `FCM_SERVICE_ACCOUNT` no Render — pra ligar os comandos push que já estão no código | 🟢 | 🗄️📱 |
+| 14 | **Saber se excluiu o app** → agora com FCM dá pra melhorar: ping silencioso; sem resposta há X = "sumiu" (some com a heurística de `ultimo_visto`) | 🟡 | 🗄️📊 |
+| 15 | **Filtro de equipe ativa** — se `eqps_ativas.status` tiver inativas, filtrar no `GET /equipes` | 🟢 | 🗄️ |
 
 ## 🗓️ Fase 3 — Backlog / futuro
 
 | # | Item | Esforço | Onde |
 |---|---|---|---|
-| 15 | Enviar +1x/dia sem histórico (só última posição) — modo alternativo | 🟡 | 📱🗄️ |
-| 16 | Termo de responsabilidade + assinatura manual (desenhada) | 🔴 | 📱🗄️ |
-| 17 | "Vigia": 4 pessoas p/ 1 dispositivo (variação de multi-usuário) | 🟡 | 📱🗄️ |
+| 16 | Enviar +1x/dia sem histórico (só última posição) — modo alternativo | 🟡 | 📱🗄️ |
+| 17 | Termo de responsabilidade + assinatura manual (desenhada) | 🔴 | 📱🗄️ |
+| 18 | Horário fixo do envio diário (ex.: sempre de manhã) via `initialDelay`/flex no WorkManager | 🟢 | 📱 |
 
 ---
 
-## Decisões pendentes antes da Fase 2
+## Notas
 
-1. **"Saber se o usuário excluiu o app" não é em tempo real.** O Android não avisa quando o app é desinstalado (por segurança). O caminho real é o painel olhar o `ultimo_visto`: sem enviar há X dias → "sumiu" (desinstalado, sem bateria, sem sinal ou GPS off — não dá pra distinguir a causa). O aviso "não exclua" (item 5, já entregue) previne; a detecção é sempre inferência. Por isso o item 13 é 🔴.
-
-2. **"Troca de proprietário" (12) x "trava após salvar".** Elas se completam: o cadastro trava pro usuário comum, e a transferência é a única forma de destravar (com dupla confirmação). Recomendo fazer 12 e 13 juntos — sem a transferência, um aparelho que troca de dono fica preso no nome errado.
-
-3. **Coletivo/Vigia (14, 17) dependem do Apex.** O trabalho grande não é o app, é trazer a lista de equipes do Apex para uma fonte que o app consome (tabela no Neon sincronizada ou endpoint). Definir se o Apex expõe as equipes por API/REST ou se extrai para tabela — isso muda o esforço entre 🟡 e 🔴.
+- **"Saber se o usuário excluiu o app" não é em tempo real.** O Android não avisa a desinstalação. Com FCM dá pra melhorar (ping silencioso → sem resposta = suspeita), mas ainda é inferência: sem enviar/sem responder há X dias pode ser desinstalado, sem bateria, sem sinal ou GPS off. O aviso "não desinstale" previne.
+- **Comandos push dependem do Firebase configurado** (item 13). Sem isso o app funciona normal e os comandos respondem `503`; a reconfirmação mensal automática (de hora em hora) funciona sem FCM.
 
 ## Ordem sugerida
 
-Fase 1 (✅ concluída) → **12 + 13 juntos** (dono + detecção de sumiço, o coração do controle) → **coletivo (14)** quando a fonte do Apex estiver definida → o resto (15–17) conforme a necessidade.
+**13 (setup Firebase)** pra ligar os comandos que já estão prontos → **12 (refresh do painel)** → **14 (detecção de sumiço com FCM)** → o resto conforme a necessidade.

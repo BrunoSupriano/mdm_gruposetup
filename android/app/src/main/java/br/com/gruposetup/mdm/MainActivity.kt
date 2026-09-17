@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnTipoEquipe: MaterialButton
     private lateinit var boxIndividual: LinearLayout
     private lateinit var boxEquipe: LinearLayout
+    private lateinit var boxEtapaPatrimonio: LinearLayout
     private lateinit var autoColaborador: AutoCompleteTextView
     private lateinit var autoEquipe: AutoCompleteTextView
     private lateinit var btnTemPatSim: MaterialButton
@@ -120,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         btnTipoEquipe = findViewById(R.id.btnTipoEquipe)
         boxIndividual = findViewById(R.id.boxIndividual)
         boxEquipe = findViewById(R.id.boxEquipe)
+        boxEtapaPatrimonio = findViewById(R.id.boxEtapaPatrimonio)
         autoColaborador = findViewById(R.id.autoColaborador)
         autoEquipe = findViewById(R.id.autoEquipe)
         btnTemPatSim = findViewById(R.id.btnTemPatSim)
@@ -140,18 +142,20 @@ class MainActivity : AppCompatActivity() {
         autoColaborador.setAdapter(ColaboradorAdapter(this))
         autoColaborador.setOnItemClickListener { parent, _, position, _ ->
             colabSelecionado = parent.getItemAtPosition(position) as? ColabItem
+            if (colabSelecionado != null) mostrarEtapaPatrimonio()
         }
         autoColaborador.doAfterTextChanged {
             val sel = colabSelecionado
-            if (sel != null && it?.toString() != sel.nome) colabSelecionado = null
+            if (sel != null && it?.toString() != sel.nome) { colabSelecionado = null; esconderEtapaPatrimonio() }
         }
         autoEquipe.setAdapter(EquipeAdapter(this))
         autoEquipe.setOnItemClickListener { parent, _, position, _ ->
             equipeSelecionada = parent.getItemAtPosition(position) as? EquipeItem
+            if (equipeSelecionada != null) mostrarEtapaPatrimonio()
         }
         autoEquipe.doAfterTextChanged {
             val sel = equipeSelecionada
-            if (sel != null && it?.toString() != sel.descricao) equipeSelecionada = null
+            if (sel != null && it?.toString() != sel.descricao) { equipeSelecionada = null; esconderEtapaPatrimonio() }
         }
         btnTipoIndividual.setOnClickListener { escolherTipo("individual") }
         btnTipoEquipe.setOnClickListener { escolherTipo("equipe") }
@@ -286,6 +290,22 @@ class MainActivity : AppCompatActivity() {
         else { colabSelecionado = null; autoColaborador.setText("") }
         estilizarToggle(btnTipoIndividual, ind)
         estilizarToggle(btnTipoEquipe, !ind)
+        // trocar de tipo volta pra etapa do responsável: esconde a etapa de patrimônio
+        esconderEtapaPatrimonio()
+    }
+
+    private fun mostrarEtapaPatrimonio() {
+        boxEtapaPatrimonio.visibility = View.VISIBLE
+    }
+
+    private fun esconderEtapaPatrimonio() {
+        boxEtapaPatrimonio.visibility = View.GONE
+        temPatrimonio = null
+        boxPatrimonio.visibility = View.GONE
+        boxImei.visibility = View.GONE
+        edtPatrimonio.text?.clear(); edtImei.text?.clear()
+        estilizarToggle(btnTemPatSim, false)
+        estilizarToggle(btnTemPatNao, false)
     }
 
     private fun resetarSelecaoTipo() {
@@ -294,6 +314,7 @@ class MainActivity : AppCompatActivity() {
         temPatrimonio = null
         boxIndividual.visibility = View.GONE
         boxEquipe.visibility = View.GONE
+        boxEtapaPatrimonio.visibility = View.GONE
         boxPatrimonio.visibility = View.GONE
         boxImei.visibility = View.GONE
         autoColaborador.setText(""); autoEquipe.setText("")

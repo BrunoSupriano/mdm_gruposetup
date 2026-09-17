@@ -192,6 +192,12 @@
                             android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
                     </LinearLayout>
 
+                    <!-- Etapa 2: patrimônio (aparece só depois de escolher o responsável) -->
+                    <LinearLayout
+                        android:id="@+id/boxEtapaPatrimonio"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical" android:visibility="gone">
+
                     <!-- Pergunta: tem patrimônio? -->
                     <TextView
                         android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -303,6 +309,7 @@
                         android:text="Depois de salvar, o cadastro não pode ser alterado."
                         android:textColor="@color/textMuted" android:textSize="11sp"
                         android:gravity="center" android:paddingTop="8dp"/>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Travado (visível depois de cadastrado) -->

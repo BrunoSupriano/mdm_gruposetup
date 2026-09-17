@@ -16,8 +16,8 @@
     <color name="textOnDark">#FFFFFF</color>
     <color name="textMuted">#B8FFFFFF</color>
     <color name="scrim">#66001A15</color>
-    <!-- aviso vermelho (glass) — vivo, sem estourar -->
-    <color name="redGlassFill">#3DE53935</color>
-    <color name="redGlassStroke">#80E53935</color>
-    <color name="redSoft">#FF6B6B</color>
+    <!-- aviso vermelho (glass) — vivo -->
+    <color name="redGlassFill">#4DFF3B30</color>
+    <color name="redGlassStroke">#CCFF3B30</color>
+    <color name="redSoft">#FF4D4D</color>
 </resources>

@@ -31,7 +31,7 @@ android {
         minSdk = 21
         targetSdk = 34
         versionCode = 6
-        versionName = "1.3.0"
+        versionName = "1.5.0"
 
         // Injetados no build (CI secret ou -P / keystore.properties). NAO ficam no repo.
         val apiBase = secret("API_BASE_URL", "https://mdm-gruposetup-backend.onrender.com")

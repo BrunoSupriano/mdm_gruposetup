@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="22dp"
+    android:background="@drawable/glass_card_solid"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Localização" android:textColor="@color/white"
+        android:textSize="20sp" android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="ÚLTIMA POSIÇÃO ENVIADA" android:textColor="@color/textMuted"
+        android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08"
+        android:paddingTop="18dp"/>
+    <TextView
+        android:id="@+id/txtLastLoc"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Aguardando primeiro envio" android:textColor="@color/textOnDark"
+        android:textSize="18sp" android:textStyle="bold" android:paddingTop="6dp"/>
+    <TextView
+        android:id="@+id/txtLastTime"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="—" android:textColor="@color/textMuted"
+        android:textSize="13sp" android:paddingTop="2dp"/>
+
+    <TextView
+        android:id="@+id/txtEnvioStatus"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="" android:textColor="@color/ok" android:textSize="13sp"
+        android:paddingTop="10dp" android:visibility="gone"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEnviarAgora"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Enviar localização agora" android:textColor="@color/white"
+        android:textAllCaps="false" android:layout_marginTop="16dp"
+        android:insetTop="0dp" android:insetBottom="0dp"
+        app:backgroundTint="@color/primary" app:cornerRadius="14dp" app:elevation="0dp"/>
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="O envio é automático 1x por dia — este botão é só para forçar agora."
+        android:textColor="@color/textMuted" android:textSize="11sp"
+        android:gravity="center" android:paddingTop="8dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFecharLoc"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Fechar" android:textColor="@color/white" android:textAllCaps="false"
+        android:layout_marginTop="6dp"/>
+</LinearLayout>

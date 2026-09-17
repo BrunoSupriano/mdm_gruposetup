@@ -45,19 +45,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var offlineOverlay: View
     private lateinit var btnTentarNovamente: Button
     private lateinit var btnConfig: ImageButton
+    private lateinit var btnLocalizacao: ImageButton
     private lateinit var updateBanner: LinearLayout
     private lateinit var btnAtualizarMain: Button
     private lateinit var statusPill: TextView
-    private lateinit var txtLastLoc: TextView
-    private lateinit var txtLastTime: TextView
-    private lateinit var txtEnvioStatus: TextView
-    private lateinit var btnEnviarAgora: Button
+    private lateinit var txtCadastroLabel: TextView
     private lateinit var formCadastro: LinearLayout
+    private lateinit var boxEtapaTipo: LinearLayout
+    private lateinit var resumoResponsavel: LinearLayout
+    private lateinit var txtResponsavelResumo: TextView
+    private lateinit var btnAlterarResp: Button
     private lateinit var btnTipoIndividual: MaterialButton
     private lateinit var btnTipoEquipe: MaterialButton
     private lateinit var boxIndividual: LinearLayout
     private lateinit var boxEquipe: LinearLayout
     private lateinit var boxEtapaPatrimonio: LinearLayout
+
+    // Views do diálogo de localização (nulas quando o diálogo está fechado)
+    private var dlgLoc: AlertDialog? = null
+    private var txtLastLoc: TextView? = null
+    private var txtLastTime: TextView? = null
+    private var txtEnvioStatus: TextView? = null
+    private var btnEnviarAgora: Button? = null
     private lateinit var autoColaborador: AutoCompleteTextView
     private lateinit var autoEquipe: AutoCompleteTextView
     private lateinit var btnTemPatSim: MaterialButton
@@ -91,6 +100,11 @@ class MainActivity : AppCompatActivity() {
     private var dialogConfig: AlertDialog? = null
     private var atualizacaoInfo: UpdateChecker.Info? = null
 
+    // Recebe o aviso do FcmService quando a T.I. reseta/pede reconfirmação → atualiza a tela na hora
+    private val cadastroReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context?, i: Intent?) { mostrarEstadoLocal() }
+    }
+
     private data class Pend(val texto: String, val acao: () -> Unit)
 
     private val reqLoc = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -109,14 +123,16 @@ class MainActivity : AppCompatActivity() {
         offlineOverlay = findViewById(R.id.offlineOverlay)
         btnTentarNovamente = findViewById(R.id.btnTentarNovamente)
         btnConfig = findViewById(R.id.btnConfig)
+        btnLocalizacao = findViewById(R.id.btnLocalizacao)
         updateBanner = findViewById(R.id.updateBanner)
         btnAtualizarMain = findViewById(R.id.btnAtualizarMain)
         statusPill = findViewById(R.id.statusPill)
-        txtLastLoc = findViewById(R.id.txtLastLoc)
-        txtLastTime = findViewById(R.id.txtLastTime)
-        txtEnvioStatus = findViewById(R.id.txtEnvioStatus)
-        btnEnviarAgora = findViewById(R.id.btnEnviarAgora)
+        txtCadastroLabel = findViewById(R.id.txtCadastroLabel)
         formCadastro = findViewById(R.id.formCadastro)
+        boxEtapaTipo = findViewById(R.id.boxEtapaTipo)
+        resumoResponsavel = findViewById(R.id.resumoResponsavel)
+        txtResponsavelResumo = findViewById(R.id.txtResponsavelResumo)
+        btnAlterarResp = findViewById(R.id.btnAlterarResp)
         btnTipoIndividual = findViewById(R.id.btnTipoIndividual)
         btnTipoEquipe = findViewById(R.id.btnTipoEquipe)
         boxIndividual = findViewById(R.id.boxIndividual)
@@ -165,8 +181,9 @@ class MainActivity : AppCompatActivity() {
         btnDiscarImei.setOnClickListener { discarCodigoImei() }
 
         btnSalvarCadastro.setOnClickListener { salvarCadastro() }
-        btnEnviarAgora.setOnClickListener { enviarAgora() }
         btnConfig.setOnClickListener { mostrarConfig() }
+        btnLocalizacao.setOnClickListener { mostrarLocalizacao() }
+        btnAlterarResp.setOnClickListener { alterarResponsavel() }
         btnTentarNovamente.setOnClickListener { verificarConexao() }
         btnAtualizarMain.setOnClickListener { baixarAtualizacao(btnAtualizarMain) }
 
@@ -188,6 +205,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        androidx.core.content.ContextCompat.registerReceiver(
+            this, cadastroReceiver, android.content.IntentFilter(FcmService.ACAO_CADASTRO_MUDOU),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
         mostrarEstadoLocal()
         if (!verificarConexao()) return
         sincronizar()
@@ -210,9 +231,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        try { unregisterReceiver(cadastroReceiver) } catch (e: Exception) { }
+        super.onPause()
+    }
+
     override fun onDestroy() {
         dialogPend?.dismiss(); dialogPend = null
         dialogConfig?.dismiss(); dialogConfig = null
+        dlgLoc?.dismiss(); dlgLoc = null
         super.onDestroy()
     }
 
@@ -232,26 +259,41 @@ class MainActivity : AppCompatActivity() {
         return online
     }
 
-    // ---------------- última localização ----------------
+    // ---------------- localização (diálogo do ícone de pino) ----------------
+    private fun mostrarLocalizacao() {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_localizacao, null)
+        txtLastLoc = view.findViewById(R.id.txtLastLoc)
+        txtLastTime = view.findViewById(R.id.txtLastTime)
+        txtEnvioStatus = view.findViewById(R.id.txtEnvioStatus)
+        btnEnviarAgora = view.findViewById(R.id.btnEnviarAgora)
+        btnEnviarAgora?.setOnClickListener { enviarLocalizacao("manual") }
+        mostrarUltima()
+        dlgLoc = AlertDialog.Builder(this, R.style.Theme_SetupMDM_Dialog).setView(view).create()
+        view.findViewById<Button>(R.id.btnFecharLoc).setOnClickListener { dlgLoc?.dismiss() }
+        dlgLoc?.setOnDismissListener {
+            dlgLoc = null; txtLastLoc = null; txtLastTime = null; txtEnvioStatus = null; btnEnviarAgora = null
+        }
+        dlgLoc?.show()
+    }
+
     private fun mostrarUltima() {
         if (Prefs.temEnvio(this)) {
             val lat = Prefs.lat(this); val lon = Prefs.lon(this)
-            txtLastLoc.text = "$lat, $lon"
+            txtLastLoc?.text = "$lat, $lon"
             val fmt = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale("pt", "BR"))
-            txtLastTime.text = "Enviado em " + fmt.format(Date(Prefs.quando(this)))
+            txtLastTime?.text = "Enviado em " + fmt.format(Date(Prefs.quando(this)))
         } else {
-            txtLastLoc.text = "Aguardando primeiro envio"
-            txtLastTime.text = "—"
+            txtLastLoc?.text = "Aguardando primeiro envio"
+            txtLastTime?.text = "—"
         }
     }
 
     private fun statusEnvio(msg: String, erro: Boolean) {
-        txtEnvioStatus.visibility = View.VISIBLE
-        txtEnvioStatus.text = msg
-        txtEnvioStatus.setTextColor(ContextCompat.getColor(this, if (erro) R.color.error else R.color.ok))
+        val t = txtEnvioStatus ?: return
+        t.visibility = View.VISIBLE
+        t.text = msg
+        t.setTextColor(ContextCompat.getColor(this, if (erro) R.color.error else R.color.ok))
     }
-
-    private fun enviarAgora() = enviarLocalizacao("manual")
 
     @SuppressLint("MissingPermission")
     private fun enviarLocalizacao(origem: String) {
@@ -260,13 +302,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (!Permissions.gpsLigado(this)) { statusEnvio("Ligue a localização (GPS) do aparelho", true); return }
-        statusEnvio("Enviando...", false); btnEnviarAgora.isEnabled = false
+        statusEnvio("Enviando...", false); btnEnviarAgora?.isEnabled = false
         lifecycleScope.launch {
             val fix = withContext(Dispatchers.IO) { LocationRepository.obterLocalizacao(this@MainActivity) }
-            if (fix == null) { statusEnvio("Não consegui obter a localização agora", true); btnEnviarAgora.isEnabled = true; return@launch }
+            if (fix == null) { statusEnvio("Não consegui obter a localização agora", true); btnEnviarAgora?.isEnabled = true; return@launch }
             val payload = DeviceInfo.buildPayload(this@MainActivity, fix.location, fix.provider, origem)
             val code = withContext(Dispatchers.IO) { ApiClient.enviarComCodigo(payload) }
-            btnEnviarAgora.isEnabled = true
+            btnEnviarAgora?.isEnabled = true
             when {
                 code in 200..299 -> {
                     Prefs.salvarUltima(this@MainActivity, fix.location.latitude, fix.location.longitude, System.currentTimeMillis())
@@ -290,12 +332,30 @@ class MainActivity : AppCompatActivity() {
         else { colabSelecionado = null; autoColaborador.setText("") }
         estilizarToggle(btnTipoIndividual, ind)
         estilizarToggle(btnTipoEquipe, !ind)
-        // trocar de tipo volta pra etapa do responsável: esconde a etapa de patrimônio
+        // está na etapa do responsável: garante etapa 1 visível, sem resumo/patrimônio
+        boxEtapaTipo.visibility = View.VISIBLE
+        resumoResponsavel.visibility = View.GONE
         esconderEtapaPatrimonio()
     }
 
+    /** Etapa 1 respondida: recolhe a pergunta e mostra um resumo, abrindo espaço para o patrimônio. */
     private fun mostrarEtapaPatrimonio() {
+        val nome = colabSelecionado?.nome ?: equipeSelecionada?.descricao ?: return
+        val prefixo = if (tipoUso == "equipe") "👥 " else "👤 "
+        txtResponsavelResumo.text = prefixo + nome
+        boxEtapaTipo.visibility = View.GONE
+        resumoResponsavel.visibility = View.VISIBLE
         boxEtapaPatrimonio.visibility = View.VISIBLE
+    }
+
+    /** "alterar" no resumo: volta para a etapa 1 (escolher responsável). */
+    private fun alterarResponsavel() {
+        resumoResponsavel.visibility = View.GONE
+        boxEtapaTipo.visibility = View.VISIBLE
+        esconderEtapaPatrimonio()
+        // limpa a seleção atual para o usuário escolher de novo
+        colabSelecionado = null; equipeSelecionada = null
+        autoColaborador.setText(""); autoEquipe.setText("")
     }
 
     private fun esconderEtapaPatrimonio() {
@@ -312,6 +372,8 @@ class MainActivity : AppCompatActivity() {
         tipoUso = null
         colabSelecionado = null; equipeSelecionada = null
         temPatrimonio = null
+        boxEtapaTipo.visibility = View.VISIBLE
+        resumoResponsavel.visibility = View.GONE
         boxIndividual.visibility = View.GONE
         boxEquipe.visibility = View.GONE
         boxEtapaPatrimonio.visibility = View.GONE
@@ -384,6 +446,7 @@ class MainActivity : AppCompatActivity() {
     private fun mostrarTravado(nome: String, cargo: String, doc: String) {
         cadastrado = true
         modoReconfirmar = false
+        txtCadastroLabel.visibility = View.GONE          // o travado tem seu próprio título
         formCadastro.visibility = View.GONE
         cadastroTravado.visibility = View.VISIBLE
         txtReconfirmAviso.visibility = View.GONE
@@ -396,6 +459,7 @@ class MainActivity : AppCompatActivity() {
         if (formCadastro.visibility == View.VISIBLE && !modoReconfirmar && !cadastrado) return
         cadastrado = false
         modoReconfirmar = false
+        txtCadastroLabel.visibility = View.VISIBLE
         cadastroTravado.visibility = View.GONE
         formCadastro.visibility = View.VISIBLE
         txtReconfirmAviso.visibility = View.GONE
@@ -407,6 +471,7 @@ class MainActivity : AppCompatActivity() {
         if (formCadastro.visibility == View.VISIBLE && modoReconfirmar) return
         cadastrado = true
         modoReconfirmar = true
+        txtCadastroLabel.visibility = View.VISIBLE
         cadastroTravado.visibility = View.GONE
         formCadastro.visibility = View.VISIBLE
         txtReconfirmAviso.visibility = View.VISIBLE

@@ -468,7 +468,7 @@ async def resetar_cadastro(android_id: str):
     O aparelho volta a mostrar o formulario em branco no proximo abrir do app. Nao apaga posicoes."""
     async with pool.acquire() as con:
         row = await con.fetchrow(
-            "SELECT cadastrado_em FROM mdm.devices WHERE android_id = $1", android_id
+            "SELECT cadastrado_em, fcm_token FROM mdm.devices WHERE android_id = $1", android_id
         )
         if not row:
             raise HTTPException(status_code=404, detail="dispositivo nao encontrado")
@@ -489,6 +489,12 @@ async def resetar_cadastro(android_id: str):
             """,
             android_id,
         )
+    # avisa o aparelho na hora (best-effort): se tiver FCM configurado + token, empurra "resetar"
+    if fcm.configurado() and row["fcm_token"]:
+        try:
+            await fcm.enviar_comando(row["fcm_token"], {"tipo": "resetar", "texto": ""})
+        except Exception:
+            pass
     return {"ok": True, "cadastrado": False, "resetado": True}
 
 

@@ -1,5 +1,6 @@
 package br.com.gruposetup.mdm
 
+import android.content.Intent
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,12 @@ class FcmService : FirebaseMessagingService() {
             "reconfirmar" -> {
                 Prefs.setPrecisaReconfirmar(ctx, true)
                 Notifier.avisarReconfirmar(ctx)
+                ctx.sendBroadcast(Intent(ACAO_CADASTRO_MUDOU).setPackage(ctx.packageName))
+            }
+            "resetar" -> {
+                Prefs.limparCadastro(ctx)
+                // se a Activity estiver aberta, atualiza na hora; senão, atualiza no próximo abrir
+                ctx.sendBroadcast(Intent(ACAO_CADASTRO_MUDOU).setPackage(ctx.packageName))
             }
             "atualizar" -> runBlocking {
                 val info = UpdateChecker.checar()
@@ -31,6 +38,8 @@ class FcmService : FirebaseMessagingService() {
     }
 
     companion object {
+        const val ACAO_CADASTRO_MUDOU = "br.com.gruposetup.mdm.CADASTRO_MUDOU"
+
         /** Registra o token no backend numa thread (fora da main). */
         fun registrarToken(ctx: android.content.Context, token: String) {
             Thread {

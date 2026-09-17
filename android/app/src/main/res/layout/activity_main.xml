@@ -38,6 +38,14 @@
                 </LinearLayout>
 
                 <ImageButton
+                    android:id="@+id/btnLocalizacao"
+                    android:layout_width="44dp" android:layout_height="44dp"
+                    android:src="@drawable/ic_pin"
+                    android:background="@drawable/circle_glass"
+                    android:scaleType="centerInside"
+                    android:padding="10dp" android:layout_marginEnd="10dp"
+                    android:contentDescription="Localização"/>
+                <ImageButton
                     android:id="@+id/btnConfig"
                     android:layout_width="44dp" android:layout_height="44dp"
                     android:src="@drawable/ic_gear"
@@ -56,48 +64,6 @@
                 android:paddingHorizontal="18dp" android:paddingVertical="10dp"
                 android:background="@drawable/pill_ok" android:layout_marginBottom="18dp"/>
 
-            <!-- Card: última localização -->
-            <LinearLayout
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:background="@drawable/glass_card"
-                android:padding="20dp" android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="ÚLTIMA LOCALIZAÇÃO" android:textColor="@color/textMuted"
-                    android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
-                <TextView
-                    android:id="@+id/txtLastLoc"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Aguardando primeiro envio" android:textColor="@color/textOnDark"
-                    android:textSize="18sp" android:textStyle="bold" android:paddingTop="8dp"/>
-                <TextView
-                    android:id="@+id/txtLastTime"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="—" android:textColor="@color/textMuted"
-                    android:textSize="13sp" android:paddingTop="2dp"/>
-
-                <TextView
-                    android:id="@+id/txtEnvioStatus"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="" android:textColor="@color/ok" android:textSize="13sp"
-                    android:paddingTop="8dp" android:visibility="gone"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEnviarAgora"
-                    style="@style/Widget.MaterialComponents.Button"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Enviar localização agora" android:textColor="@color/white"
-                    android:textAllCaps="false" android:layout_marginTop="14dp"
-                    android:insetTop="0dp" android:insetBottom="0dp"
-                    app:backgroundTint="@color/primary" app:cornerRadius="14dp" app:elevation="0dp"/>
-                <TextView
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Envio automático 1x por dia"
-                    android:textColor="@color/textMuted" android:textSize="11sp"
-                    android:gravity="center" android:paddingTop="8dp"/>
-            </LinearLayout>
-
             <!-- Card: cadastro -->
             <LinearLayout
                 android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -105,6 +71,7 @@
                 android:padding="20dp" android:layout_marginBottom="16dp">
 
                 <TextView
+                    android:id="@+id/txtCadastroLabel"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="CADASTRO DO DISPOSITIVO" android:textColor="@color/textMuted"
                     android:textSize="12sp" android:textStyle="bold" android:letterSpacing="0.08"/>
@@ -122,6 +89,12 @@
                         android:textColor="@color/redSoft" android:textSize="13sp"
                         android:background="@drawable/glass_red" android:padding="12dp"
                         android:layout_marginBottom="12dp" android:visibility="gone"/>
+
+                    <!-- Etapa 1: individual ou equipe + responsável (some após responder) -->
+                    <LinearLayout
+                        android:id="@+id/boxEtapaTipo"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical">
 
                     <!-- Pergunta inicial: individual ou equipe -->
                     <TextView
@@ -190,6 +163,31 @@
                             android:textColor="@color/textOnDark" android:textSize="15sp"
                             android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
                             android:completionThreshold="2" android:inputType="text" android:imeOptions="actionSearch"/>
+                    </LinearLayout>
+
+                    </LinearLayout>
+                    <!-- fim da Etapa 1 (boxEtapaTipo) -->
+
+                    <!-- Resumo do responsável (aparece quando a Etapa 1 é respondida) -->
+                    <LinearLayout
+                        android:id="@+id/resumoResponsavel"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:background="@drawable/glass_input" android:padding="14dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:id="@+id/txtResponsavelResumo"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="—" android:textColor="@color/textOnDark" android:textSize="15sp"/>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAlterarResp"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="alterar" android:textColor="@color/primaryLight"
+                            android:textAllCaps="false" android:minWidth="0dp"
+                            android:insetTop="0dp" android:insetBottom="0dp"
+                            android:paddingHorizontal="8dp"/>
                     </LinearLayout>
 
                     <!-- Etapa 2: patrimônio (aparece só depois de escolher o responsável) -->
@@ -316,12 +314,26 @@
                 <LinearLayout
                     android:id="@+id/cadastroTravado"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="vertical" android:paddingTop="12dp" android:visibility="gone">
+                    android:orientation="vertical" android:visibility="gone">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="✓  Cadastro concluído" android:textColor="@color/ok"
+                        android:textSize="22sp" android:textStyle="bold"/>
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Monitoramento ativo neste aparelho."
+                        android:textColor="@color/textMuted" android:textSize="13sp"
+                        android:paddingTop="2dp" android:paddingBottom="16dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="RESPONSÁVEL" android:textColor="@color/textMuted"
+                        android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08"/>
                     <TextView
                         android:id="@+id/txtColabNome"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:text="—" android:textColor="@color/textOnDark"
-                        android:textSize="18sp" android:textStyle="bold"/>
+                        android:textSize="18sp" android:textStyle="bold" android:paddingTop="4dp"/>
                     <TextView
                         android:id="@+id/txtColabCargo"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -330,12 +342,7 @@
                         android:id="@+id/txtDoc"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:text="" android:textColor="@color/textOnDark" android:textSize="15sp"
-                        android:paddingTop="10dp"/>
-                    <TextView
-                        android:id="@+id/txtCadInfo"
-                        android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:text="🔒 Cadastro concluído" android:textColor="@color/ok"
-                        android:textSize="12sp" android:paddingTop="10dp"/>
+                        android:paddingTop="12dp"/>
                 </LinearLayout>
             </LinearLayout>
 

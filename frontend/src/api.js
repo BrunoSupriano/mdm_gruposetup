@@ -1,5 +1,10 @@
 const BASE = (import.meta.env.VITE_API_BASE_URL || 'https://mdm-gruposetup-backend.onrender.com').replace(/\/$/, '')
 
+// "Acorda" o backend do Render free (cold start) — chamado ao abrir o painel e em intervalo.
+export function prewarm() {
+  try { fetch(BASE + '/health', { cache: 'no-store' }).catch(() => {}) } catch { /* ignore */ }
+}
+
 export function getToken() { return localStorage.getItem('mdm_token') || '' }
 export function setToken(t) { localStorage.setItem('mdm_token', t) }
 export function logout() { localStorage.removeItem('mdm_token') }

@@ -256,36 +256,31 @@
                             android:layout_width="match_parent" android:layout_height="wrap_content"
                             android:text="IMEI do aparelho" android:textColor="@color/textOnDark"
                             android:textSize="14sp" android:paddingTop="16dp" android:paddingBottom="6dp"/>
-                        <LinearLayout
+                        <EditText
+                            android:id="@+id/edtImei"
+                            android:layout_width="match_parent" android:layout_height="52dp"
+                            android:hint="Ex.: 356938035643809" android:textColorHint="@color/textMuted"
+                            android:textColor="@color/textOnDark" android:textSize="15sp"
+                            android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
+                            android:inputType="number" android:maxLength="17"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnDiscarImei"
+                            style="@style/Widget.MaterialComponents.Button"
                             android:layout_width="match_parent" android:layout_height="wrap_content"
-                            android:orientation="horizontal" android:gravity="center_vertical">
-                            <EditText
-                                android:id="@+id/edtImei"
-                                android:layout_width="0dp" android:layout_height="52dp"
-                                android:layout_weight="1"
-                                android:hint="Ex.: 356938035643809" android:textColorHint="@color/textMuted"
-                                android:textColor="@color/textOnDark" android:textSize="15sp"
-                                android:background="@drawable/glass_input" android:paddingHorizontal="14dp"
-                                android:inputType="number" android:maxLength="17"/>
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnDiscarImei"
-                                style="@style/Widget.MaterialComponents.Button"
-                                android:layout_width="wrap_content" android:layout_height="52dp"
-                                android:layout_marginStart="8dp"
-                                android:text="*#06#" android:textColor="@color/white"
-                                android:textAllCaps="false" android:textSize="13sp"
-                                android:minWidth="0dp"
-                                android:insetTop="0dp" android:insetBottom="0dp"
-                                android:paddingHorizontal="14dp"
-                                app:backgroundTint="@color/glassFill"
-                                app:strokeColor="@color/glassStroke" app:strokeWidth="1dp"
-                                app:cornerRadius="12dp" app:elevation="0dp"/>
-                        </LinearLayout>
+                            android:text="Não sei meu IMEI — descobrir" android:textColor="@color/white"
+                            android:textAllCaps="false" android:layout_marginTop="10dp"
+                            android:insetTop="0dp" android:insetBottom="0dp"
+                            app:icon="@drawable/ic_dialpad" app:iconGravity="textStart"
+                            app:iconTint="@color/white"
+                            app:backgroundTint="@color/glassFill"
+                            app:strokeColor="@color/glassStroke" app:strokeWidth="1dp"
+                            app:cornerRadius="12dp" app:elevation="0dp"/>
                         <TextView
                             android:layout_width="match_parent" android:layout_height="wrap_content"
-                            android:text="Toque em *#06# para o aparelho mostrar o IMEI."
+                            android:text="Toque no botão acima: o teclado do telefone abre e o número do IMEI aparece na tela. Anote e digite no campo."
                             android:textColor="@color/textMuted" android:textSize="11sp"
-                            android:paddingTop="6dp"/>
+                            android:paddingTop="8dp"/>
                     </LinearLayout>
 
                     <TextView

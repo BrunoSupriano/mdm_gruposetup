@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val reqBg = registerForActivityResult(ActivityResultContracts.RequestPermission()) { sincronizar() }
     private val reqNotif = registerForActivityResult(ActivityResultContracts.RequestPermission()) { sincronizar() }
+    private val reqContas = registerForActivityResult(ActivityResultContracts.RequestPermission()) { mostrarResultadoContas() }
     private val abrirConfig = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { sincronizar() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -575,6 +576,12 @@ class MainActivity : AppCompatActivity() {
             btnUpd.setOnClickListener { baixarAtualizacao(btnUpd) }
         } else btnUpd.visibility = View.GONE
 
+        view.findViewById<Button>(R.id.btnTestarConta).setOnClickListener {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) == PackageManager.PERMISSION_GRANTED)
+                mostrarResultadoContas()
+            else reqContas.launch(Manifest.permission.GET_ACCOUNTS)
+        }
+
         val btnVerificar = view.findViewById<Button>(R.id.btnVerificarUpd)
         btnVerificar.setOnClickListener {
             btnVerificar.isEnabled = false; btnVerificar.text = "Verificando..."
@@ -599,6 +606,21 @@ class MainActivity : AppCompatActivity() {
             .setView(view).create()
         view.findViewById<Button>(R.id.btnFecharConfig).setOnClickListener { dialogConfig?.dismiss() }
         dialogConfig?.show()
+    }
+
+    private fun mostrarResultadoContas() {
+        val contas = DeviceInfo.contasGoogle(this)
+        val temPerm = ContextCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) == PackageManager.PERMISSION_GRANTED
+        val msg = when {
+            !temPerm -> "Permissão de contas negada."
+            contas.isEmpty() -> "Nenhuma conta Google visível para o app.\n\nConfirma o que a gente esperava: o Android 8+ não expõe a conta Google para apps comuns."
+            else -> "Conta(s) Google visível(is):\n\n" + contas.joinToString("\n")
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Diagnóstico — conta Google")
+            .setMessage(msg)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     // ---------------- atualização ----------------

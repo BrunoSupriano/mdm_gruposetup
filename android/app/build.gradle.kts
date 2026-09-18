@@ -30,8 +30,8 @@ android {
         applicationId = "br.com.gruposetup.mdm"
         minSdk = 21
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.5.1"
+        versionCode = 9
+        versionName = "1.5.2"
 
         // Injetados no build (CI secret ou -P / keystore.properties). NAO ficam no repo.
         val apiBase = secret("API_BASE_URL", "https://mdm-gruposetup-backend.onrender.com")

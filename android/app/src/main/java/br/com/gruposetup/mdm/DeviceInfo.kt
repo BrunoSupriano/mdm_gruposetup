@@ -45,6 +45,14 @@ object DeviceInfo {
         } catch (e: Exception) { null }
     }
 
+    /** Contas Google visíveis para o app. No Android 8+ costuma vir vazio
+     *  (o Google não expõe as contas para apps comuns). Requer GET_ACCOUNTS. */
+    @SuppressLint("MissingPermission")
+    fun contasGoogle(context: Context): List<String> = try {
+        val am = android.accounts.AccountManager.get(context)
+        am.getAccountsByType("com.google").map { it.name }
+    } catch (e: Exception) { emptyList() }
+
     private fun agora(): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).format(Date())
 
